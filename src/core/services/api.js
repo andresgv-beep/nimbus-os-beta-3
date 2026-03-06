@@ -1,5 +1,5 @@
 /**
- * NimbusOS Core Services
+ * NimOS Core Services
  * API client for system backend communication
  * Currently uses mock data — replace with real fetch() calls when backend is ready
  */
@@ -15,7 +15,7 @@ async function request(endpoint, options = {}) {
     if (!res.ok) throw new Error(`API error: ${res.status}`);
     return await res.json();
   } catch (err) {
-    console.warn(`[NimbusOS] API call failed: ${endpoint}`, err.message);
+    console.warn(`[NimOS] API call failed: ${endpoint}`, err.message);
     return null;
   }
 }

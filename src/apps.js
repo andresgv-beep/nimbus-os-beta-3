@@ -1,5 +1,5 @@
 // ═══════════════════════════════════
-// NimbusOS App Registry
+// NimOS App Registry
 // Maps app IDs to their metadata and window defaults
 // ═══════════════════════════════════
 

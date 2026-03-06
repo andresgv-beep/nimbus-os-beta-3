@@ -1,5 +1,5 @@
 // ═══════════════════════════════════
-// NimbusOS Service Icons
+// NimOS Service Icons
 // 
 // All icons are inline React components.
 // To customize: replace the SVG paths below with your own designs.

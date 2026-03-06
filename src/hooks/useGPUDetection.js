@@ -1,5 +1,5 @@
 /**
- * GPU Detection Hook for NimbusOS
+ * GPU Detection Hook for NimOS
  * Detects GPU capabilities and recommends performance level
  * 
  * Returns:
@@ -219,7 +219,7 @@ export function useGPUDetection() {
       });
 
       // Log for debugging
-      console.log('[NimbusOS] GPU Detection:', {
+      console.log('[NimOS] GPU Detection:', {
         ...gpuInfo,
         recommendedLevel,
         cores: navigator.hardwareConcurrency,

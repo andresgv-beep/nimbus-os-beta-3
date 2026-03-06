@@ -1,5 +1,5 @@
 // ═══════════════════════════════════
-// NimbusOS Icon System
+// NimOS Icon System
 // Reusable SVG icons as React components
 // ═══════════════════════════════════
 

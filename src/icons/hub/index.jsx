@@ -1,5 +1,5 @@
 // ═══════════════════════════════════
-// NimbusOS Settings Hub Icons
+// NimOS Settings Hub Icons
 //
 // Large outline icons for the settings grid.
 // viewBox 0 0 48 48, stroke-width 1.2
