@@ -8,6 +8,7 @@ import TextEditor from './texteditor/TextEditor';
 import MediaPlayer from './mediaplayer/MediaPlayer';
 import AppStore from './appstore/AppStore';
 import DownloadStation from './downloads/DownloadStation';
+import NimTorrent from './nimtorrent/NimTorrent';
 import SettingsHub from './settingshub/SettingsHub';
 import AppPlaceholder from './AppPlaceholder';
 import WebApp from './webapp/WebApp';
@@ -16,6 +17,7 @@ import { HardDriveIcon } from '@icons';
 
 const APP_COMPONENTS = {
   downloads: DownloadStation,
+  nimtorrent: NimTorrent,
   files: FileManager,
   monitor: SystemMonitor,
   containers: Containers,
@@ -42,7 +44,7 @@ function StorageRequired() {
   );
 }
 
-export default function AppRenderer({ appId, isWebApp, webAppPort, webAppName }) {
+export default function AppRenderer({ appId, isWebApp, webAppPort, webAppName, appProps }) {
   const { token } = useAuth();
   const [hasPool, setHasPool] = useState(null);
 
@@ -72,6 +74,6 @@ export default function AppRenderer({ appId, isWebApp, webAppPort, webAppName })
   
   // Otherwise render native component
   const Component = APP_COMPONENTS[appId];
-  if (Component) return <Component />;
+  if (Component) return <Component {...(appProps || {})} />;
   return <AppPlaceholder appId={appId} />;
 }
