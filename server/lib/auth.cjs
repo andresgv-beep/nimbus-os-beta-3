@@ -1,5 +1,5 @@
 /**
- * NimbusOS — Auth, Users, Preferences, 2FA
+ * NimOS — Auth, Users, Preferences, 2FA
  */
 const { execSync } = require('child_process');
 const fs = require('fs');
@@ -274,7 +274,7 @@ function verifyTotp(secret, token) {
 }
 
 function getTotpQrUrl(username, secret) {
-  const issuer = 'NimbusOS';
+  const issuer = 'NimOS';
   const uri = `otpauth://totp/${issuer}:${username}?secret=${secret}&issuer=${issuer}&algorithm=SHA1&digits=6&period=30`;
   return { uri };
 }
@@ -368,7 +368,7 @@ function ensureSmbUser(username, password) {
 function removeLinuxSmbUser(username) {
   // Remove from samba
   run(`sudo smbpasswd -x "${username}" 2>/dev/null`);
-  // Remove linux user (only if it was created by NimbusOS — check nologin shell)
+  // Remove linux user (only if it was created by NimOS — check nologin shell)
   const shell = run(`getent passwd "${username}" 2>/dev/null | cut -d: -f7`);
   if (shell && shell.includes('nologin')) {
     run(`sudo userdel "${username}" 2>/dev/null`);

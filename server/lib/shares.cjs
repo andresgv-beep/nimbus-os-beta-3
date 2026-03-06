@@ -1,5 +1,5 @@
 /**
- * NimbusOS — Shared Folders API
+ * NimOS — Shared Folders API
  */
 const fs = require('fs');
 const path = require('path');

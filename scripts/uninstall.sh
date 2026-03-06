@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# NimbusOS Uninstaller
+# NimOS Uninstaller
 # Usage: sudo /opt/nimbusos/scripts/uninstall.sh
 
 set -euo pipefail
@@ -11,7 +11,7 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-log()  { echo -e "${GREEN}[NimbusOS]${NC} $*"; }
+log()  { echo -e "${GREEN}[NimOS]${NC} $*"; }
 warn() { echo -e "${YELLOW}[WARNING]${NC} $*"; }
 
 if [[ $EUID -ne 0 ]]; then
@@ -19,14 +19,14 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
-echo -e "${CYAN}${BOLD}☁️  NimbusOS Uninstaller${NC}"
+echo -e "${CYAN}${BOLD}☁️  NimOS Uninstaller${NC}"
 echo ""
 
 # ── Confirmation ──
-echo -e "${YELLOW}This will remove NimbusOS from your system.${NC}"
+echo -e "${YELLOW}This will remove NimOS from your system.${NC}"
 echo ""
 echo "What will be removed:"
-echo "  • NimbusOS service and application (/opt/nimbusos)"
+echo "  • NimOS service and application (/opt/nimbusos)"
 echo "  • Configuration (/etc/nimbusos)"
 echo "  • Logs (/var/log/nimbusos)"
 echo "  • Avahi service file"
@@ -47,7 +47,7 @@ fi
 echo ""
 
 # ── Stop service ──
-log "Stopping NimbusOS..."
+log "Stopping NimOS..."
 systemctl stop nimbusos 2>/dev/null || true
 systemctl disable nimbusos 2>/dev/null || true
 rm -f /etc/systemd/system/nimbusos.service
@@ -97,7 +97,7 @@ fi
 
 # ── Done ──
 echo ""
-echo -e "${GREEN}${BOLD}✔ NimbusOS has been uninstalled${NC}"
+echo -e "${GREEN}${BOLD}✔ NimOS has been uninstalled${NC}"
 echo ""
 echo "To reinstall:"
 echo "  curl -fsSL https://get.nimbusos.dev/install | sudo bash"

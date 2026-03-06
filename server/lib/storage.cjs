@@ -1,5 +1,5 @@
 /**
- * NimbusOS — Storage Manager (RAID pools, disk detection, health checks)
+ * NimOS — Storage Manager (RAID pools, disk detection, health checks)
  */
 const { execSync } = require('child_process');
 const fs = require('fs');

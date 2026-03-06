@@ -1,5 +1,5 @@
 /**
- * NimbusOS Backend API Server
+ * NimOS Backend API Server
  * Modular architecture — this file is the router only.
  * Each domain lives in server/lib/*.cjs
  */
@@ -13,11 +13,11 @@ const { URL } = require('url');
 
 // ── Safety net: don't crash on unhandled errors ──
 process.on('uncaughtException', (err) => {
-  console.error('[NimbusOS] Uncaught exception:', err.message);
+  console.error('[NimOS] Uncaught exception:', err.message);
   console.error(err.stack);
 });
 process.on('unhandledRejection', (err) => {
-  console.error('[NimbusOS] Unhandled rejection:', err);
+  console.error('[NimOS] Unhandled rejection:', err);
 });
 
 // ── Load modules ──
@@ -237,7 +237,7 @@ const server = http.createServer((req, res) => {
           const { externalPort, internalPort, protocol, description } = parsed;
           if (!externalPort || !protocol) return { error: 'externalPort and protocol required' };
           const localIp = network.getLocalIP();
-          await network.upnpAddMapping(gw.controlUrl, gw.serviceType, parseInt(externalPort), parseInt(internalPort || externalPort), protocol, localIp, description || `NimbusOS:${externalPort}`, 0);
+          await network.upnpAddMapping(gw.controlUrl, gw.serviceType, parseInt(externalPort), parseInt(internalPort || externalPort), protocol, localIp, description || `NimOS:${externalPort}`, 0);
           return { ok: true, message: `Port ${externalPort}/${protocol} → ${localIp}:${internalPort || externalPort}` };
         }
         if (url === '/api/upnp/remove') {
@@ -346,7 +346,7 @@ const server = http.createServer((req, res) => {
     let body = ''; req.on('data', c => body += c);
     req.on('end', () => {
       const cmds = { '/api/system/reboot-service': 'sudo systemctl restart nimbusos', '/api/system/reboot': 'sudo reboot', '/api/system/shutdown': 'sudo shutdown -h now' };
-      const msgs = { '/api/system/reboot-service': 'NimbusOS restarting...', '/api/system/reboot': 'System rebooting...', '/api/system/shutdown': 'System shutting down...' };
+      const msgs = { '/api/system/reboot-service': 'NimOS restarting...', '/api/system/reboot': 'System rebooting...', '/api/system/shutdown': 'System shutting down...' };
       res.writeHead(200, CORS_HEADERS); res.end(JSON.stringify({ ok: true, message: msgs[url] }));
       setTimeout(() => { try { execSync(cmds[url]); } catch {} }, 1000);
     });
@@ -360,7 +360,7 @@ const server = http.createServer((req, res) => {
     if (url === '/api/system/update/check' && method === 'GET') {
       try {
         const currentVersion = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8')).version || '0.0.0';
-        const latestVersion = JSON.parse(execSync('curl -fsSL "https://raw.githubusercontent.com/andresgv-beep/nimbus-os-beta-2/main/package.json" 2>/dev/null', { timeout: 10000, encoding: 'utf8' })).version || '0.0.0';
+        const latestVersion = JSON.parse(execSync('curl -fsSL "https://raw.githubusercontent.com/andresgv-beep/nimbus-os-beta-3/main/package.json" 2>/dev/null', { timeout: 10000, encoding: 'utf8' })).version || '0.0.0';
         res.writeHead(200, CORS_HEADERS);
         return res.end(JSON.stringify({ currentVersion, latestVersion, updateAvailable: latestVersion !== currentVersion, installDir: '/opt/nimbusos' }));
       } catch (err) { res.writeHead(200, CORS_HEADERS); return res.end(JSON.stringify({ error: 'Failed: ' + err.message })); }
@@ -438,7 +438,7 @@ const server = http.createServer((req, res) => {
 // ═══════════════════════════════════
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`\n  ╔══════════════════════════════════╗`);
-  console.log(`  ║   NimbusOS API Server v0.1.0     ║`);
+  console.log(`  ║   NimOS API Server v0.1.0     ║`);
   console.log(`  ║   http://0.0.0.0:${PORT}             ║`);
   console.log(`  ╚══════════════════════════════════╝\n`);
   console.log(`  Endpoints:`);

@@ -1,5 +1,5 @@
 /**
- * NimbusOS — File Manager API (browse, upload, download)
+ * NimOS — File Manager API (browse, upload, download)
  */
 const { execSync } = require('child_process');
 const fs = require('fs');

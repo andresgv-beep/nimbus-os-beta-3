@@ -1,5 +1,5 @@
 /**
- * NimbusOS — Download Station API (Transmission RPC + aMule)
+ * NimOS — Download Station API (Transmission RPC + aMule)
  */
 const { execSync } = require('child_process');
 const fs = require('fs');
@@ -258,7 +258,7 @@ function handleDownloads(url, method, body, req) {
     });
   }
 
-  // POST /api/downloads/configure — initial setup of Transmission for NimbusOS
+  // POST /api/downloads/configure — initial setup of Transmission for NimOS
   if (url === '/api/downloads/configure' && method === 'POST') {
     if (session.role !== 'admin') return { error: 'Admin required' };
     try {
@@ -271,7 +271,7 @@ function handleDownloads(url, method, body, req) {
       let settings = {};
       try { settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8')); } catch {}
       
-      // Configure for NimbusOS
+      // Configure for NimOS
       settings['download-dir'] = downloadDir;
       settings['rpc-enabled'] = true;
       settings['rpc-port'] = 9091;

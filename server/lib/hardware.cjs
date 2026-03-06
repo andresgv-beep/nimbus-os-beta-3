@@ -1,5 +1,5 @@
 /**
- * NimbusOS — Hardware monitoring (CPU, Memory, GPU, Temps, Network, Disks)
+ * NimOS — Hardware monitoring (CPU, Memory, GPU, Temps, Network, Disks)
  */
 const { execSync } = require('child_process');
 const fs = require('fs');

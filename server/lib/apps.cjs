@@ -1,5 +1,5 @@
 /**
- * NimbusOS — Installed Apps Registry & Native Apps Detection
+ * NimOS — Installed Apps Registry & Native Apps Detection
  */
 const { execSync } = require('child_process');
 const fs = require('fs');
@@ -86,7 +86,7 @@ function unregisterApp(appId) {
 // Native Apps Detection & Management
 // ═══════════════════════════════════
 
-// Known native apps that NimbusOS can detect and integrate
+// Known native apps that NimOS can detect and integrate
 const KNOWN_NATIVE_APPS = {
   'virtualization': {
     name: 'Virtual Machines (KVM)',

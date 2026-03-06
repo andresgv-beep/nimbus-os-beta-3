@@ -1,5 +1,5 @@
 /**
- * NimbusOS — Virtual Machines (QEMU/KVM) API
+ * NimOS — Virtual Machines (QEMU/KVM) API
  */
 const { execSync } = require('child_process');
 const fs = require('fs');

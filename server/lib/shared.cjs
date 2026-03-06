@@ -1,5 +1,5 @@
 /**
- * NimbusOS — Shared constants, sessions, and helpers
+ * NimOS — Shared constants, sessions, and helpers
  */
 const { execSync } = require('child_process');
 const fs = require('fs');
