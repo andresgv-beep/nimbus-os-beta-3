@@ -141,7 +141,7 @@ Browser ──→ Vite (dev) / Static (prod) ──→ Node.js Backend
 
 ---
 
-## Changelog: Beta 1 → Beta 2
+## Changelog: Beta 1 → Beta 2 → Beta 3
 
 - **Modular backend** — 8,649-line monolith split into 12 modules
 - **Fixed duplicate `hashPassword`** — Was silently defined twice
