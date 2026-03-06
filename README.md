@@ -1,4 +1,4 @@
-# NimbusOS Beta 2
+# NimbusOS Beta 3
 
 **A modern, open-source NAS operating system** with a desktop-like web interface.
 
