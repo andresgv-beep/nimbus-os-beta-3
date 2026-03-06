@@ -1,0 +1,81 @@
+/* ═══════════════════════════════════
+   NimOS Widget Grid — Layout engine
+   Puzzle-style dynamic grid + classic sidebar mode
+   ═══════════════════════════════════ */
+
+.gridWrapper {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  padding-top: 8%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ─── Classic mode: right sidebar ─── */
+.classicMode {
+  justify-content: flex-end;
+  align-items: flex-start;
+  padding-top: 40px;
+  padding-right: 14px;
+  padding-bottom: 90px;
+  overflow-y: auto;
+}
+
+.classicMode .grid {
+  grid-auto-rows: auto;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(var(--widget-columns, 4), var(--widget-cell, 160px));
+  grid-auto-rows: var(--widget-cell, 160px);
+  gap: var(--widget-gap, 12px);
+  pointer-events: auto;
+  align-content: start;
+}
+
+/* ─── Individual widget cell placement ─── */
+.widgetSlot {
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Size classes — set by inline grid-column/grid-row */
+.widgetSlot > * {
+  width: 100%;
+  height: 100%;
+}
+
+/* ─── Entry animation ─── */
+[data-perf-level="full"] .widgetSlot {
+  animation: widgetIn 0.35s var(--ease-out) backwards;
+}
+
+@keyframes widgetIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Stagger delays */
+[data-perf-level="full"] .widgetSlot:nth-child(1)  { animation-delay: 0ms; }
+[data-perf-level="full"] .widgetSlot:nth-child(2)  { animation-delay: 40ms; }
+[data-perf-level="full"] .widgetSlot:nth-child(3)  { animation-delay: 80ms; }
+[data-perf-level="full"] .widgetSlot:nth-child(4)  { animation-delay: 120ms; }
+[data-perf-level="full"] .widgetSlot:nth-child(5)  { animation-delay: 160ms; }
+[data-perf-level="full"] .widgetSlot:nth-child(6)  { animation-delay: 200ms; }
+[data-perf-level="full"] .widgetSlot:nth-child(7)  { animation-delay: 240ms; }
+[data-perf-level="full"] .widgetSlot:nth-child(8)  { animation-delay: 280ms; }
+[data-perf-level="full"] .widgetSlot:nth-child(9)  { animation-delay: 320ms; }
+[data-perf-level="full"] .widgetSlot:nth-child(10) { animation-delay: 360ms; }
+
+[data-perf-level="performance"] .widgetSlot {
+  animation: none;
+}
