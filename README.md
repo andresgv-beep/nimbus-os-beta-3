@@ -11,7 +11,7 @@ Transform any Ubuntu/Debian server into a powerful NAS with Docker management, R
 One command on a fresh Ubuntu Server 22.04+ or Debian 12+:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/andresgv-beep/nimbus-os-beta-2/main/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/andresgv-beep/nimbus-os-beta-3/main/install.sh | sudo bash
 ```
 
 Then open `http://<your-server-ip>:5000` in any browser.
