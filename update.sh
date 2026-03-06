@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 DIR="/opt/nimbusos"
-URL="https://github.com/andresgv-beep/nimbus-os-beta-2/archive/refs/heads/main.tar.gz"
+URL="https://github.com/andresgv-beep/nimbus-os-beta-3/archive/refs/heads/main.tar.gz"
 RESULT_FILE="/var/log/nimbusos/update-result.json"
 
 PREV=$(node -e "console.log(require('$DIR/package.json').version)" 2>/dev/null)
@@ -29,7 +29,7 @@ INSTALL_HASH_NEW=$(md5sum "$DIR/install.sh" 2>/dev/null | cut -d' ' -f1)
 
 if [ "$SERVER_HASH" != "$SERVER_HASH_NEW" ] || [ "$INSTALL_HASH" != "$INSTALL_HASH_NEW" ]; then
   echo "{\"type\":\"full\",\"prev\":\"$PREV\",\"new\":\"$NEW\",\"time\":\"$(date -Iseconds)\"}" > "$RESULT_FILE"
-  echo "Backend changes detected — restarting NimbusOS service..."
+  echo "Backend changes detected — restarting NimOS service..."
   systemctl restart nimbusos
   sleep 3
   systemctl is-active --quiet nimbusos && echo "OK: $PREV -> $NEW (service restarted)" || echo "FAILED"

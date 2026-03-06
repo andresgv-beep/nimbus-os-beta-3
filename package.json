@@ -1,9 +1,9 @@
 {
-  "name": "nimbusos-ui",
+  "name": "nimos-ui",
   "private": true,
-  "version": "0.1.49",
+  "version": "0.3.0",
   "type": "module",
-  "description": "NimbusOS — Desktop-class NAS operating system UI",
+  "description": "NimOS — Desktop-class NAS operating system UI",
   "scripts": {
     "dev": "node server/index.cjs & vite",
     "server": "node server/index.cjs",
