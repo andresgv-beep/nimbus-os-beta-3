@@ -195,6 +195,47 @@ const server = http.createServer((req, res) => {
   if (url.startsWith('/api/vms'))
     return routeHandler(req, res, method, url, vms.handleVMs);
 
+  // ── Torrent Daemon proxy (127.0.0.1:9091) ──
+  if (url.startsWith('/api/torrent')) {
+    const session = getSessionUser(req);
+    if (!session) { res.writeHead(401, CORS_HEADERS); return res.end(JSON.stringify({ error: 'Not authenticated' })); }
+
+    // Map NimOS API paths → daemon paths
+    const daemonPath = url.replace('/api/torrent', '');
+    const targetPath = daemonPath || '/torrents';
+
+    // Collect body for POST
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      const opts = {
+        hostname: '127.0.0.1',
+        port: 9091,
+        path: targetPath.startsWith('/') ? targetPath : '/' + targetPath,
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+      };
+
+      const proxyReq = http.request(opts, (proxyRes) => {
+        let data = '';
+        proxyRes.on('data', c => data += c);
+        proxyRes.on('end', () => {
+          res.writeHead(proxyRes.statusCode || 200, CORS_HEADERS);
+          res.end(data);
+        });
+      });
+
+      proxyReq.on('error', () => {
+        res.writeHead(503, CORS_HEADERS);
+        res.end(JSON.stringify({ error: 'Torrent daemon not running. Install or start nimos-torrentd.' }));
+      });
+
+      if (body) proxyReq.write(body);
+      proxyReq.end();
+    });
+    return;
+  }
+
   // ── Downloads (async handlers) ──
   if (url.startsWith('/api/downloads')) {
     if (['POST', 'PUT'].includes(method)) {
