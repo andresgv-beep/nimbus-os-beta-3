@@ -118,6 +118,10 @@ install_deps() {
   apt-get install -y -qq exfat-utils 2>/dev/null || apt-get install -y -qq exfatprogs 2>/dev/null || warn "exfat utils not available"
   apt-get install -y -qq qrencode 2>/dev/null || warn "qrencode not available (2FA QR codes)"
 
+  # Torrent engine dependencies
+  log "Installing torrent engine dependencies..."
+  apt-get install -y -qq libtorrent-rasterbar-dev libboost-system-dev g++ 2>/dev/null || warn "libtorrent not available — NimTorrent will be disabled"
+
   # Verify critical tools
   local missing=""
   command -v smbd &>/dev/null || missing="$missing samba"
@@ -228,6 +232,48 @@ install_nimos() {
   chown -R $NIMBUS_USER:$NIMBUS_USER "$DATA_DIR"
   chown -R $NIMBUS_USER:$NIMBUS_USER "$CONFIG_DIR"
   chown -R $NIMBUS_USER:$NIMBUS_USER "$LOG_DIR"
+
+  # ── Build NimTorrent daemon ──
+  if command -v g++ &>/dev/null && dpkg -l libtorrent-rasterbar-dev &>/dev/null 2>&1; then
+    log "Building NimTorrent daemon..."
+    cd "$INSTALL_DIR/torrentd"
+
+    # Download httplib.h if not present
+    if [[ ! -f httplib.h ]]; then
+      curl -fsSLO https://raw.githubusercontent.com/yhirose/cpp-httplib/master/httplib.h 2>/dev/null || true
+    fi
+
+    if [[ -f httplib.h ]]; then
+      if make 2>/dev/null; then
+        cp nimos-torrentd /usr/local/bin/nimos-torrentd
+        chmod 755 /usr/local/bin/nimos-torrentd
+        mkdir -p /var/lib/nimos/torrentd/state /run/nimos /data/torrents
+
+        # Default config
+        if [[ ! -f /etc/nimos/torrent.conf ]]; then
+          mkdir -p /etc/nimos
+          cp torrent.conf /etc/nimos/torrent.conf
+        fi
+
+        # Systemd service
+        cp nimos-torrentd.service /etc/systemd/system/
+        systemctl daemon-reload
+        systemctl enable nimos-torrentd 2>/dev/null || true
+
+        # Set ownership
+        chown -R $NIMBUS_USER:$NIMBUS_USER /var/lib/nimos /data/torrents 2>/dev/null || true
+
+        ok "NimTorrent daemon built and installed"
+      else
+        warn "NimTorrent build failed — torrent features disabled"
+      fi
+    else
+      warn "httplib.h download failed — NimTorrent disabled"
+    fi
+    cd "$INSTALL_DIR"
+  else
+    warn "libtorrent not available — NimTorrent disabled"
+  fi
 
   # Migrate from old homedir-based config (Beta 1 → Beta 2)
   for OLD_DIR in /root/.nimbusos /home/*/.nimbusos; do
@@ -519,6 +565,11 @@ start_nimbusos() {
   step "Starting NimOS"
 
   systemctl start nimbusos
+
+  # Start torrent daemon if installed
+  if [[ -f /usr/local/bin/nimos-torrentd ]]; then
+    systemctl start nimos-torrentd 2>/dev/null || true
+  fi
 
   # Wait for it to come up
   for i in $(seq 1 15); do
