@@ -123,9 +123,9 @@
   right: 0;
   margin-top: 4px;
   min-width: 160px;
-  background: var(--bg-window, rgba(30, 30, 35, 0.95));
+  background: var(--bg-window);
   backdrop-filter: blur(20px);
-  border: 1px solid var(--border-light, rgba(255, 255, 255, 0.1));
+  border: 1px solid var(--border-light);
   border-radius: 10px;
   padding: 4px;
   z-index: 100;
@@ -145,7 +145,7 @@
 }
 
 .dropItem:hover {
-  background: var(--bg-hover, rgba(255, 255, 255, 0.06));
+  background: var(--bg-hover);
 }
 
 .dropItemActive {
@@ -177,18 +177,16 @@
 
 .dropSep {
   height: 1px;
-  background: var(--border, rgba(255, 255, 255, 0.08));
+  background: var(--border);
   margin: 4px 8px;
 }
 
 [data-theme="light"] .dropdown {
-  background: rgba(255, 255, 255, 0.95);
-  border-color: rgba(0, 0, 0, 0.1);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
 }
 
-[data-theme="light"] .dropItem:hover {
-  background: rgba(0, 0, 0, 0.04);
+[data-theme="light"] .menuDots:hover {
+  background: rgba(0, 0, 0, 0.06);
 }
 
 /* ─── Body ─── */

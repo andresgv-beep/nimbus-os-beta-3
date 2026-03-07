@@ -42,7 +42,7 @@ function AddWidgetModal({ currentWidgets, onAdd, onClose }) {
       display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999,
     }} onClick={onClose}>
       <div style={{
-        background: 'var(--bg-window, #1e1e23)', border: '1px solid var(--border, rgba(255,255,255,0.1))',
+        background: 'var(--bg-window)', border: '1px solid var(--border-light)',
         borderRadius: 16, padding: 24, width: 380, maxWidth: '90%',
         boxShadow: '0 16px 48px rgba(0,0,0,0.5)',
       }} onClick={e => e.stopPropagation()}>
@@ -59,8 +59,8 @@ function AddWidgetModal({ currentWidgets, onAdd, onClose }) {
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12,
                   padding: '10px 12px', borderRadius: 10,
-                  background: alreadyAdded ? 'transparent' : 'var(--bg-card, rgba(255,255,255,0.03))',
-                  border: '1px solid var(--border, rgba(255,255,255,0.06))',
+                  background: alreadyAdded ? 'transparent' : 'var(--bg-card)',
+                  border: '1px solid var(--border)',
                   cursor: alreadyAdded ? 'default' : 'pointer',
                   opacity: alreadyAdded ? 0.35 : 1,
                   transition: 'background 0.15s',
@@ -71,8 +71,8 @@ function AddWidgetModal({ currentWidgets, onAdd, onClose }) {
                     onClose();
                   }
                 }}
-                onMouseEnter={e => { if (!alreadyAdded) e.currentTarget.style.background = 'var(--bg-hover, rgba(255,255,255,0.06))'; }}
-                onMouseLeave={e => { if (!alreadyAdded) e.currentTarget.style.background = 'var(--bg-card, rgba(255,255,255,0.03))'; }}
+                onMouseEnter={e => { if (!alreadyAdded) e.currentTarget.style.background = 'var(--bg-hover)'; }}
+                onMouseLeave={e => { if (!alreadyAdded) e.currentTarget.style.background = 'var(--bg-card)'; }}
               >
                 <span style={{ fontSize: 22 }}>{reg.icon}</span>
                 <div style={{ flex: 1 }}>
