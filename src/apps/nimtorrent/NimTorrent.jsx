@@ -84,6 +84,35 @@ export default function NimTorrent() {
     setAdding(false);
   };
 
+  const addTorrentFile = async (file) => {
+    setAdding(true);
+    setError('');
+    try {
+      const formData = new FormData();
+      formData.append('torrent', file);
+      const res = await fetch('/api/torrent/upload', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.error) setError(data.error);
+      else { setShowAdd(false); setMagnetInput(''); fetchData(); }
+    } catch { setError('Failed to upload torrent file'); }
+    setAdding(false);
+  };
+
+  const handleFileSelect = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.torrent';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) addTorrentFile(file);
+    };
+    input.click();
+  };
+
   const pauseTorrent = async (hash) => {
     await fetch('/api/torrent/torrent/pause', { method: 'POST', headers, body: JSON.stringify({ hash }) });
     fetchData();
@@ -236,6 +265,8 @@ export default function NimTorrent() {
         <div className={styles.modalOverlay} onClick={() => { setShowAdd(false); setError(''); }}>
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <div className={styles.modalTitle}>Add Torrent</div>
+            
+            {/* Magnet link input */}
             <input
               className={styles.modalInput}
               placeholder="magnet:?xt=urn:btih:..."
@@ -244,11 +275,25 @@ export default function NimTorrent() {
               autoFocus
               onKeyDown={e => { if (e.key === 'Enter') addTorrent(); }}
             />
+
+            {/* Divider */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0 12px', color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>
+              <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+              <span>or</span>
+              <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+            </div>
+
+            {/* Upload .torrent file */}
+            <button className={styles.toolBtn} onClick={handleFileSelect} disabled={adding}
+              style={{ width: '100%', justifyContent: 'center', padding: '10px', marginBottom: 12 }}>
+              <Icon name="upload" size={14} /> Upload .torrent file
+            </button>
+
             {error && <div style={{ color: 'var(--accent-red)', fontSize: 'var(--text-xs)', marginBottom: 8 }}>{error}</div>}
             <div className={styles.modalActions}>
               <button className={styles.toolBtn} onClick={() => { setShowAdd(false); setError(''); }}>Cancel</button>
               <button className={styles.toolBtnPrimary} onClick={addTorrent} disabled={adding || !magnetInput.trim()}>
-                {adding ? 'Adding...' : 'Add'}
+                {adding ? 'Adding...' : 'Add Magnet'}
               </button>
             </div>
           </div>
