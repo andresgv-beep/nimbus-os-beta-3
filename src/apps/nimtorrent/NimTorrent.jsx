@@ -109,7 +109,7 @@ export default function NimTorrent() {
 
       const res = await fetch('/api/torrent/upload', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        Authorization: `Bearer ${localStorage.getItem("nimbus_token")}`
         body: formData,
       });
       const text = await res.text();
