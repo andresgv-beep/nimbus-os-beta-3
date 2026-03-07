@@ -36,6 +36,13 @@ const DEFAULT_PREFS = {
   widgetScale: 100,
   visibleWidgets: { system: true, network: true, disk: true, notifications: true },
   pinnedApps: ['files', 'appstore', 'nimsettings'],
+  _defaultWidgets: [
+    { id: 'clock', size: '1x1' },
+    { id: 'disk-pool', size: '1x1' },
+    { id: 'system-monitor', size: '2x1' },
+    { id: 'network', size: '2x1' },
+    { id: 'nimtorrent', size: '2x1' },
+  ],
 };
 
 // Get token from localStorage
@@ -133,6 +140,7 @@ export function ThemeProvider({ children }) {
     try { return JSON.parse(localStorage.getItem('nimbus-pinned') || '[]'); } catch { return []; }
   });
   const [visibleWidgets, setVisibleWidgets] = useState(DEFAULT_PREFS.visibleWidgets);
+  const [widgetLayout, setWidgetLayout] = useState(null); // null = use DEFAULT_WIDGETS
   
   // Re-detect GPU on mount (for async info display)
   const [gpuInfo, setGpuInfo] = useState(perfState.gpuInfo);
@@ -189,6 +197,7 @@ export function ThemeProvider({ children }) {
           if (p.widgetMode) setWidgetMode(p.widgetMode);
           if (p.widgetScale) setWidgetScale(p.widgetScale);
           if (p.visibleWidgets) setVisibleWidgets(p.visibleWidgets);
+          if (p.widgetLayout) setWidgetLayout(p.widgetLayout);
           if (p.pinnedApps && Array.isArray(p.pinnedApps)) setPinnedApps(p.pinnedApps);
           
           // Also update localStorage as cache
@@ -502,6 +511,50 @@ export function ThemeProvider({ children }) {
     savePrefsToServer({ widgetMode: mode });
   }, [savePrefsToServer]);
 
+  // ─── Widget Layout Management ───
+  const updateWidgetLayout = useCallback((newLayout) => {
+    setWidgetLayout(newLayout);
+    savePrefsToServer({ widgetLayout: newLayout });
+  }, [savePrefsToServer]);
+
+  const resizeWidget = useCallback((widgetId, newSize) => {
+    setWidgetLayout(prev => {
+      const layout = prev || DEFAULT_PREFS._defaultWidgets;
+      const next = layout.map(w => w.id === widgetId ? { ...w, size: newSize } : w);
+      savePrefsToServer({ widgetLayout: next });
+      return next;
+    });
+  }, [savePrefsToServer]);
+
+  const removeWidgetFromLayout = useCallback((widgetId) => {
+    setWidgetLayout(prev => {
+      const layout = prev || DEFAULT_PREFS._defaultWidgets;
+      const next = layout.filter(w => w.id !== widgetId);
+      savePrefsToServer({ widgetLayout: next });
+      return next;
+    });
+  }, [savePrefsToServer]);
+
+  const addWidgetToLayout = useCallback((widgetId, size) => {
+    setWidgetLayout(prev => {
+      const layout = prev || DEFAULT_PREFS._defaultWidgets;
+      if (layout.find(w => w.id === widgetId)) return layout; // already exists
+      const next = [...layout, { id: widgetId, size }];
+      savePrefsToServer({ widgetLayout: next });
+      return next;
+    });
+  }, [savePrefsToServer]);
+
+  const moveWidget = useCallback((fromIndex, toIndex) => {
+    setWidgetLayout(prev => {
+      const layout = [...(prev || DEFAULT_PREFS._defaultWidgets)];
+      const [moved] = layout.splice(fromIndex, 1);
+      layout.splice(toIndex, 0, moved);
+      savePrefsToServer({ widgetLayout: layout });
+      return layout;
+    });
+  }, [savePrefsToServer]);
+
   const toggleWidget = useCallback((key) => {
     setVisibleWidgets(prev => {
       const next = { ...prev, [key]: !prev[key] };
@@ -582,6 +635,13 @@ export function ThemeProvider({ children }) {
     setGlowIntensity: applyGlowIntensity,
     setWallpaper: applyWallpaper,
     toggleWidget,
+    // Widget layout
+    widgetLayout,
+    resizeWidget,
+    removeWidgetFromLayout,
+    addWidgetToLayout,
+    moveWidget,
+    updateWidgetLayout,
     // Sync status
     prefsLoaded,
   };
