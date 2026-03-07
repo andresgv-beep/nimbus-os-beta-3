@@ -7,7 +7,8 @@
   position: absolute;
   inset: 0;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
   padding-top: 8%;
   pointer-events: none;
   z-index: 1;
@@ -15,8 +16,8 @@
 
 /* ─── Classic mode: right sidebar ─── */
 .classicMode {
-  justify-content: flex-end;
-  align-items: flex-start;
+  justify-content: flex-start;
+  align-items: flex-end;
   padding-top: 40px;
   padding-right: 14px;
   padding-bottom: 90px;
@@ -36,16 +37,72 @@
   align-content: start;
 }
 
+/* ─── Edit mode grid ─── */
+.gridEdit {
+  /* subtle indication that we're in edit mode */
+}
+
 /* ─── Individual widget cell placement ─── */
 .widgetSlot {
   min-width: 0;
   min-height: 0;
+  position: relative;
 }
 
-/* Size classes — set by inline grid-column/grid-row */
 .widgetSlot > * {
   width: 100%;
   height: 100%;
+}
+
+/* ─── Edit mode: widget slot ─── */
+.widgetSlotEdit {
+  cursor: grab;
+  border-radius: 20px;
+  outline: 2px dashed rgba(255, 255, 255, 0.15);
+  outline-offset: 2px;
+}
+
+.widgetSlotEdit:active {
+  cursor: grabbing;
+}
+
+.widgetSlotDragOver {
+  outline-color: var(--accent);
+  outline-style: solid;
+  outline-width: 2px;
+}
+
+/* ─── Drag grip overlay ─── */
+.editOverlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: none;
+  padding-bottom: 8px;
+}
+
+.editGrip {
+  font-size: 18px;
+  color: var(--text-muted);
+  opacity: 0.5;
+  letter-spacing: 2px;
+  user-select: none;
+}
+
+/* ─── Edit banner ─── */
+.editBanner {
+  margin-top: 12px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  background: var(--bg-window);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  pointer-events: auto;
+  backdrop-filter: blur(20px);
 }
 
 /* ─── Entry animation ─── */
@@ -78,4 +135,13 @@
 
 [data-perf-level="performance"] .widgetSlot {
   animation: none;
+}
+
+/* ─── Light theme ─── */
+[data-theme="light"] .widgetSlotEdit {
+  outline-color: rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .editGrip {
+  color: var(--text-muted);
 }

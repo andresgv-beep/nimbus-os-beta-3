@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import styles from './WidgetGrid.module.css';
 
 // ═══════════════════════════════════
@@ -7,8 +7,6 @@ import styles from './WidgetGrid.module.css';
 // ═══════════════════════════════════
 
 function computeLayout(widgets, columns) {
-  // Grid is a 2D array tracking occupied cells
-  // We expand rows as needed
   const grid = [];
   const positions = [];
 
@@ -32,11 +30,9 @@ function computeLayout(widgets, columns) {
     const [w, h] = widget.size.split('x').map(Number);
     let placed = false;
 
-    // Scan row by row, col by col for the first fit
     for (let row = 0; !placed; row++) {
       for (let col = 0; col <= columns - w; col++) {
         if (fits(row, col, w, h)) {
-          // Place it
           for (let r = row; r < row + h; r++) {
             for (let c = col; c < col + w; c++) {
               setCell(r, c, widget.id);
@@ -44,7 +40,7 @@ function computeLayout(widgets, columns) {
           }
           positions.push({
             id: widget.id,
-            col: col + 1,       // CSS grid is 1-indexed
+            col: col + 1,
             row: row + 1,
             colSpan: w,
             rowSpan: h,
@@ -53,7 +49,6 @@ function computeLayout(widgets, columns) {
           break;
         }
       }
-      // Safety: don't go beyond 20 rows
       if (row > 20) break;
     }
   }
@@ -62,11 +57,13 @@ function computeLayout(widgets, columns) {
 }
 
 // ═══════════════════════════════════
-// WidgetGrid — renders widgets in a puzzle grid
+// WidgetGrid
 // ═══════════════════════════════════
 
-export default function WidgetGrid({ widgets, columns = 4, mode = 'dynamic', renderWidget }) {
+export default function WidgetGrid({ widgets, columns = 4, mode = 'dynamic', renderWidget, editMode, onReorder }) {
   const effectiveColumns = mode === 'classic' ? 1 : columns;
+  const [dragOver, setDragOver] = useState(null);
+  const dragItem = useRef(null);
 
   const layout = useMemo(
     () => computeLayout(widgets, effectiveColumns),
@@ -79,33 +76,81 @@ export default function WidgetGrid({ widgets, columns = 4, mode = 'dynamic', ren
     ? `${styles.gridWrapper} ${styles.classicMode}`
     : styles.gridWrapper;
 
+  const handleDragStart = (e, index) => {
+    dragItem.current = index;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', index);
+    // Make the drag image semi-transparent
+    setTimeout(() => {
+      if (e.target) e.target.style.opacity = '0.4';
+    }, 0);
+  };
+
+  const handleDragEnd = (e) => {
+    e.target.style.opacity = '1';
+    dragItem.current = null;
+    setDragOver(null);
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOver !== index) setDragOver(index);
+  };
+
+  const handleDrop = (e, toIndex) => {
+    e.preventDefault();
+    const fromIndex = dragItem.current;
+    setDragOver(null);
+    if (fromIndex !== null && fromIndex !== toIndex && onReorder) {
+      onReorder(fromIndex, toIndex);
+    }
+  };
+
   return (
     <div className={wrapperClass}>
       <div
-        className={styles.grid}
+        className={`${styles.grid} ${editMode ? styles.gridEdit : ''}`}
         style={{ '--widget-columns': effectiveColumns }}
       >
-        {layout.map((pos) => {
+        {layout.map((pos, layoutIndex) => {
           const widget = widgets.find(w => w.id === pos.id);
           if (!widget) return null;
+          const widgetIndex = widgets.findIndex(w => w.id === pos.id);
+          const isDragTarget = dragOver === widgetIndex && dragItem.current !== widgetIndex;
 
           return (
             <div
               key={pos.id}
-              className={styles.widgetSlot}
+              className={`${styles.widgetSlot} ${editMode ? styles.widgetSlotEdit : ''} ${isDragTarget ? styles.widgetSlotDragOver : ''}`}
               style={{
                 gridColumn: `${pos.col} / span ${pos.colSpan}`,
                 gridRow: `${pos.row} / span ${pos.rowSpan}`,
               }}
+              draggable={editMode}
+              onDragStart={editMode ? (e) => handleDragStart(e, widgetIndex) : undefined}
+              onDragEnd={editMode ? handleDragEnd : undefined}
+              onDragOver={editMode ? (e) => handleDragOver(e, widgetIndex) : undefined}
+              onDrop={editMode ? (e) => handleDrop(e, widgetIndex) : undefined}
             >
               {renderWidget(widget)}
+              {editMode && (
+                <div className={styles.editOverlay}>
+                  <div className={styles.editGrip}>⠿</div>
+                </div>
+              )}
             </div>
           );
         })}
       </div>
+
+      {editMode && (
+        <div className={styles.editBanner}>
+          Editing widgets — drag to reorder
+        </div>
+      )}
     </div>
   );
 }
 
-// Export the layout engine for testing
 export { computeLayout };

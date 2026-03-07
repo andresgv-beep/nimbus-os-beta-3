@@ -115,7 +115,7 @@ function AddWidgetModal({ currentWidgets, onAdd, onClose }) {
 
 export default function DynamicWidgets() {
   const { openWindow } = useWindows();
-  const { widgetMode, widgetLayout, resizeWidget, removeWidgetFromLayout, addWidgetToLayout } = useTheme();
+  const { widgetMode, widgetLayout, resizeWidget, removeWidgetFromLayout, addWidgetToLayout, moveWidget } = useTheme();
   const [showAddModal, setShowAddModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
 
@@ -124,6 +124,14 @@ export default function DynamicWidgets() {
   const isClassic = widgetMode === 'classic';
   const activeWidgets = widgetLayout || DEFAULT_WIDGETS;
   const widgets = isClassic ? activeWidgets.map(w => ({ ...w, size: '1x1' })) : activeWidgets;
+
+  const handleReorder = (fromIndex, toIndex) => {
+    moveWidget(fromIndex, toIndex);
+  };
+
+  const toggleEditMode = () => {
+    setEditMode(prev => !prev);
+  };
 
   const renderWidget = (widget) => {
     const reg = WIDGET_REGISTRY[widget.id];
@@ -139,21 +147,22 @@ export default function DynamicWidgets() {
       'nimtorrent':     'nimtorrent',
     };
 
-    const handleClick = appMap[widget.id]
-      ? () => openWindow(appMap[widget.id], { width: 960, height: 640 })
-      : undefined;
+    const handleClick = editMode ? undefined : (
+      appMap[widget.id]
+        ? () => openWindow(appMap[widget.id], { width: 960, height: 640 })
+        : undefined
+    );
 
     return (
       <Comp
         size={effectiveSize}
         onClick={handleClick}
-        // Menu props passed through to WidgetCard
         widgetId={widget.id}
         availableSizes={reg.sizes}
         onResize={resizeWidget}
         onRemove={removeWidgetFromLayout}
         onAddWidget={() => setShowAddModal(true)}
-        onEditGrid={() => setEditMode(!editMode)}
+        onEditGrid={toggleEditMode}
       />
     );
   };
@@ -165,6 +174,8 @@ export default function DynamicWidgets() {
         columns={isClassic ? 1 : 4}
         mode={widgetMode}
         renderWidget={renderWidget}
+        editMode={editMode}
+        onReorder={handleReorder}
       />
       {showAddModal && (
         <AddWidgetModal
