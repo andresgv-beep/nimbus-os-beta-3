@@ -23,6 +23,15 @@ export const APP_REGISTRY = {
     defaultSize: { width: 960, height: 600 },
     category: 'system',
   },
+  nimtorrent: {
+    id: 'nimtorrent',
+    title: 'NimTorrent',
+    color: '#E95420',
+    icon: 'download',
+    appIcon: null,
+    defaultSize: { width: 960, height: 600 },
+    category: 'system',
+  },
   files: {
     id: 'files',
     title: 'File Manager',
