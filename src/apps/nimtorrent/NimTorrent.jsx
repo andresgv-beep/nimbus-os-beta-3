@@ -103,25 +103,21 @@ export default function NimTorrent() {
     setAdding(true);
     setError('');
     try {
-      // Read file as base64
-      const base64 = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
+      const formData = new FormData();
+      formData.append('torrent', file);
+      formData.append('save_path', savePath || '');
 
       const res = await fetch('/api/torrent/upload', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: file.name, data: base64, save_path: savePath || '' }),
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData,
       });
       const text = await res.text();
       let data;
-      try { data = JSON.parse(text); } catch { data = { error: text || 'Unknown error' }; }
+      try { data = JSON.parse(text); } catch { data = { error: text || 'Unknown response' }; }
       if (data.error) setError(data.error);
       else { setShowAdd(false); setMagnetInput(''); fetchData(); }
-    } catch (err) { setError('Upload failed: ' + (err.message || 'Unknown error')); }
+    } catch (err) { setError('Upload failed: ' + (err.message || 'Network error')); }
     setAdding(false);
   };
 
