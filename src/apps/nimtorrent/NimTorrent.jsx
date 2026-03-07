@@ -109,16 +109,35 @@ export default function NimTorrent() {
 
       const res = await fetch('/api/torrent/upload', {
         method: 'POST',
-        Authorization: `Bearer ${localStorage.getItem("nimbus_token")}`
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("nimbus_token")}`
+        },
         body: formData,
       });
+      
       const text = await res.text();
       let data;
-      try { data = JSON.parse(text); } catch { data = { error: text || `Server returned status ${res.status} with no valid response` }; }
+  
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { error: text || `Server returned status ${res.status} with no valid response` };
+      }
+  
       if (!res.ok && !data.error) data.error = `Upload failed (HTTP ${res.status})`;
-      if (data.error) setError(data.error);
-      else { setShowAdd(false); setMagnetInput(''); fetchData(); }
-    } catch (err) { setError('Upload failed: ' + (err.message || 'Network error')); }
+  
+      if (data.error) {
+        setError(data.error);
+      } else {
+        setShowAdd(false);
+        setMagnetInput('');
+        fetchData();
+      }
+  
+    } catch (err) {
+      setError('Upload failed: ' + (err.message || 'Network error'));
+    }
+  
     setAdding(false);
   };
 
