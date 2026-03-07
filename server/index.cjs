@@ -197,91 +197,109 @@ const server = http.createServer((req, res) => {
 
   // ── Torrent file upload (multipart — handle before proxy) ──
   if (url === '/api/torrent/upload' && method === 'POST') {
-    const session = getSessionUser(req);
-    if (!session) { res.writeHead(401, CORS_HEADERS); return res.end(JSON.stringify({ error: 'Not authenticated' })); }
+    console.log('[TorrentUpload] Handler entered');
+    try {
+      const session = getSessionUser(req);
+      if (!session) { res.writeHead(401, CORS_HEADERS); return res.end(JSON.stringify({ error: 'Not authenticated' })); }
 
-    const contentType = req.headers['content-type'] || '';
-    const boundaryMatch = contentType.match(/boundary=(.+)/);
-    if (!boundaryMatch) { res.writeHead(400, CORS_HEADERS); return res.end(JSON.stringify({ error: 'No boundary in content-type' })); }
-    const boundary = boundaryMatch[1].trim();
+      const contentType = req.headers['content-type'] || '';
+      const boundaryMatch = contentType.match(/boundary=(?:"([^"]+)"|([^\s;]+))/);
+      const boundary = boundaryMatch ? (boundaryMatch[1] || boundaryMatch[2]) : null;
+      console.log('[TorrentUpload] Content-Type:', contentType, '| Boundary:', boundary ? boundary.substring(0, 30) : 'NONE');
+      if (!boundary) { res.writeHead(400, CORS_HEADERS); return res.end(JSON.stringify({ error: 'No boundary in content-type' })); }
 
-    let rawData = [];
-    req.on('data', chunk => rawData.push(chunk));
-    req.on('end', () => {
-      try {
-        const buffer = Buffer.concat(rawData);
-        let fileName = '', fileData = null, savePath = '';
+      let rawData = [];
+      req.on('data', chunk => rawData.push(chunk));
+      req.on('error', (err) => {
+        console.error('[TorrentUpload] Request stream error:', err.message);
+        if (!res.headersSent) { res.writeHead(500, CORS_HEADERS); res.end(JSON.stringify({ error: 'Request stream error' })); }
+      });
+      req.on('end', () => {
+        try {
+          const buffer = Buffer.concat(rawData);
+          console.log('[TorrentUpload] Received', buffer.length, 'bytes');
+          let fileName = '', fileData = null, savePath = '';
 
-        // Binary-safe multipart parsing using latin1 round-trip
-        // latin1 is a 1:1 byte↔char mapping, so this preserves binary data
-        const text = buffer.toString('latin1');
-        const delimiter = '--' + boundary;
-        const parts = text.split(delimiter);
+          // Binary-safe multipart parsing using latin1 (1:1 byte↔char mapping)
+          const text = buffer.toString('latin1');
+          const delimiter = '--' + boundary;
+          const parts = text.split(delimiter);
+          console.log('[TorrentUpload] Found', parts.length, 'parts (including preamble/epilogue)');
 
-        // First element is empty (before first boundary), last is closing "--\r\n"
-        for (let i = 1; i < parts.length; i++) {
-          const part = parts[i];
-          // Skip closing boundary
-          if (part.startsWith('--')) continue;
+          // First element is preamble (empty), last is epilogue ("--\r\n")
+          for (let i = 1; i < parts.length; i++) {
+            const part = parts[i];
+            // Skip closing boundary
+            if (part.startsWith('--')) continue;
 
-          const headerEnd = part.indexOf('\r\n\r\n');
-          if (headerEnd === -1) continue;
+            const headerEnd = part.indexOf('\r\n\r\n');
+            if (headerEnd === -1) continue;
 
-          const header = part.substring(0, headerEnd);
-          // Body is between header end and the trailing \r\n before next boundary
-          let body = part.substring(headerEnd + 4);
-          // Remove trailing \r\n that precedes the next boundary delimiter
-          if (body.endsWith('\r\n')) body = body.slice(0, -2);
+            const header = part.substring(0, headerEnd);
+            // Body is between header end and the trailing \r\n before next boundary delimiter
+            let body = part.substring(headerEnd + 4);
+            // Remove trailing \r\n that precedes the next boundary delimiter
+            if (body.endsWith('\r\n')) body = body.slice(0, -2);
 
-          if (header.includes('name="save_path"')) {
-            savePath = body.trim();
-          } else if (header.includes('name="torrent"')) {
-            const fnMatch = header.match(/filename="([^"]+)"/);
-            if (fnMatch) fileName = fnMatch[1];
-            // Convert back to binary buffer preserving all bytes
-            fileData = Buffer.from(body, 'latin1');
+            if (header.includes('name="save_path"')) {
+              savePath = body.trim();
+              console.log('[TorrentUpload] save_path:', savePath);
+            } else if (header.includes('name="torrent"')) {
+              const fnMatch = header.match(/filename="([^"]+)"/);
+              if (fnMatch) fileName = fnMatch[1];
+              // Convert back to binary buffer preserving all bytes
+              fileData = Buffer.from(body, 'latin1');
+              console.log('[TorrentUpload] File:', fileName, '| Size:', fileData.length, 'bytes');
+            }
           }
-        }
 
-        if (!fileData || !fileName) {
-          res.writeHead(400, CORS_HEADERS);
-          return res.end(JSON.stringify({ error: 'No torrent file found in upload' }));
-        }
+          if (!fileData || !fileName) {
+            console.error('[TorrentUpload] No file data extracted. fileName:', fileName, 'fileData:', !!fileData);
+            res.writeHead(400, CORS_HEADERS);
+            return res.end(JSON.stringify({ error: 'No torrent file found in upload' }));
+          }
 
-        const tmpDir = '/tmp/nimos-torrents';
-        if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
-        const filePath = path.join(tmpDir, `${Date.now()}-${fileName}`);
-        fs.writeFileSync(filePath, fileData);
+          const tmpDir = '/tmp/nimos-torrents';
+          if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
+          const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+          const filePath = path.join(tmpDir, `${Date.now()}-${safeName}`);
+          fs.writeFileSync(filePath, fileData);
+          console.log('[TorrentUpload] Saved to', filePath);
 
-        // Send to daemon
-        const postData = JSON.stringify({ file: filePath, save_path: savePath || '' });
-        const opts = {
-          hostname: '127.0.0.1', port: 9091, path: '/torrent/add', method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) },
-        };
+          // Send to daemon
+          const postData = JSON.stringify({ file: filePath, save_path: savePath || '' });
+          const opts = {
+            hostname: '127.0.0.1', port: 9091, path: '/torrent/add', method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) },
+          };
 
-        const proxyReq = http.request(opts, (proxyRes) => {
-          let rdata = '';
-          proxyRes.on('data', c => rdata += c);
-          proxyRes.on('end', () => {
-            try { fs.unlinkSync(filePath); } catch {}
-            res.writeHead(proxyRes.statusCode || 200, CORS_HEADERS);
-            res.end(rdata);
+          const proxyReq = http.request(opts, (proxyRes) => {
+            let rdata = '';
+            proxyRes.on('data', c => rdata += c);
+            proxyRes.on('end', () => {
+              try { fs.unlinkSync(filePath); } catch {}
+              console.log('[TorrentUpload] Daemon responded:', proxyRes.statusCode, rdata.substring(0, 200));
+              res.writeHead(proxyRes.statusCode || 200, CORS_HEADERS);
+              res.end(rdata);
+            });
           });
-        });
-        proxyReq.on('error', (err) => {
-          try { fs.unlinkSync(filePath); } catch {}
-          res.writeHead(503, CORS_HEADERS);
-          res.end(JSON.stringify({ error: 'Torrent daemon not running' }));
-        });
-        proxyReq.write(postData);
-        proxyReq.end();
-      } catch (err) {
-        console.error('[TorrentUpload] Error:', err.message, err.stack);
-        res.writeHead(500, CORS_HEADERS);
-        res.end(JSON.stringify({ error: 'Upload processing failed: ' + err.message }));
-      }
-    });
+          proxyReq.on('error', (err) => {
+            try { fs.unlinkSync(filePath); } catch {}
+            console.error('[TorrentUpload] Daemon connection error:', err.message);
+            res.writeHead(503, CORS_HEADERS);
+            res.end(JSON.stringify({ error: 'Torrent daemon not running' }));
+          });
+          proxyReq.write(postData);
+          proxyReq.end();
+        } catch (err) {
+          console.error('[TorrentUpload] Processing error:', err.message, '\n', err.stack);
+          if (!res.headersSent) { res.writeHead(500, CORS_HEADERS); res.end(JSON.stringify({ error: 'Upload processing failed: ' + err.message })); }
+        }
+      });
+    } catch (err) {
+      console.error('[TorrentUpload] Outer error:', err.message, '\n', err.stack);
+      if (!res.headersSent) { res.writeHead(500, CORS_HEADERS); res.end(JSON.stringify({ error: 'Upload handler error: ' + err.message })); }
+    }
     return;
   }
 
