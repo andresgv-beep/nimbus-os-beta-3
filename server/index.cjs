@@ -197,29 +197,48 @@ const server = http.createServer((req, res) => {
 
   // ── Torrent file upload (multipart — handle before proxy) ──
   if (url === '/api/torrent/upload' && method === 'POST') {
-    console.log('[TORRENT UPLOAD] Request received');
     const session = getSessionUser(req);
-    if (!session) { console.log('[TORRENT UPLOAD] Not authenticated'); res.writeHead(401, CORS_HEADERS); return res.end(JSON.stringify({ error: 'Not authenticated' })); }
-    console.log('[TORRENT UPLOAD] Auth OK, reading body...');
+    if (!session) { res.writeHead(401, CORS_HEADERS); return res.end(JSON.stringify({ error: 'Not authenticated' })); }
 
-    let body = '';
-    req.on('data', c => body += c);
+    const boundary = req.headers['content-type']?.split('boundary=')[1];
+    if (!boundary) { res.writeHead(400, CORS_HEADERS); return res.end(JSON.stringify({ error: 'No boundary' })); }
+
+    let rawData = [];
+    req.on('data', chunk => rawData.push(chunk));
     req.on('end', () => {
-      console.log('[TORRENT UPLOAD] Body received, length:', body.length);
       try {
-        const { filename, data, save_path } = JSON.parse(body);
-        console.log('[TORRENT UPLOAD] Parsed JSON, filename:', filename, 'data length:', data ? data.length : 0, 'save_path:', save_path);
-        if (!data) { res.writeHead(400, CORS_HEADERS); return res.end(JSON.stringify({ error: 'No torrent data' })); }
+        const buffer = Buffer.concat(rawData);
+        const text = buffer.toString('latin1');
+        const parts = text.split('--' + boundary).slice(1, -1);
+
+        let fileName = '', fileData = null, savePath = '';
+
+        for (const part of parts) {
+          const headerEnd = part.indexOf('\r\n\r\n');
+          const header = part.substring(0, headerEnd);
+          const body = part.substring(headerEnd + 4, part.length - 2);
+
+          if (header.includes('name="save_path"')) {
+            savePath = body.trim();
+          } else if (header.includes('name="torrent"')) {
+            const fnMatch = header.match(/filename="([^"]+)"/);
+            if (fnMatch) fileName = fnMatch[1];
+            fileData = Buffer.from(body, 'latin1');
+          }
+        }
+
+        if (!fileData || !fileName) {
+          res.writeHead(400, CORS_HEADERS);
+          return res.end(JSON.stringify({ error: 'No torrent file found' }));
+        }
 
         const tmpDir = '/tmp/nimos-torrents';
         if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
-
-        const filePath = path.join(tmpDir, `${Date.now()}-${filename || 'upload.torrent'}`);
-        fs.writeFileSync(filePath, Buffer.from(data, 'base64'));
-        console.log('[TORRENT UPLOAD] Saved to:', filePath, 'size:', fs.statSync(filePath).size);
+        const filePath = path.join(tmpDir, `${Date.now()}-${fileName}`);
+        fs.writeFileSync(filePath, fileData);
 
         // Send to daemon
-        const postData = JSON.stringify({ file: filePath, save_path: save_path || '' });
+        const postData = JSON.stringify({ file: filePath, save_path: savePath || '' });
         const opts = {
           hostname: '127.0.0.1', port: 9091, path: '/torrent/add', method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) },
@@ -229,14 +248,12 @@ const server = http.createServer((req, res) => {
           let rdata = '';
           proxyRes.on('data', c => rdata += c);
           proxyRes.on('end', () => {
-            console.log('[TORRENT UPLOAD] Daemon response:', rdata);
             try { fs.unlinkSync(filePath); } catch {}
             res.writeHead(200, CORS_HEADERS);
             res.end(rdata);
           });
         });
-        proxyReq.on('error', (err) => {
-          console.log('[TORRENT UPLOAD] Daemon error:', err.message);
+        proxyReq.on('error', () => {
           try { fs.unlinkSync(filePath); } catch {}
           res.writeHead(503, CORS_HEADERS);
           res.end(JSON.stringify({ error: 'Torrent daemon not running' }));
@@ -244,7 +261,6 @@ const server = http.createServer((req, res) => {
         proxyReq.write(postData);
         proxyReq.end();
       } catch (err) {
-        console.log('[TORRENT UPLOAD] Error:', err.message);
         res.writeHead(500, CORS_HEADERS);
         res.end(JSON.stringify({ error: err.message }));
       }
