@@ -125,6 +125,7 @@ export default function NimTorrent() {
   const fileInputRef = useRef(null);
 
   const handleFileSelect = () => {
+    console.log("UPLOAD CLICK");
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
