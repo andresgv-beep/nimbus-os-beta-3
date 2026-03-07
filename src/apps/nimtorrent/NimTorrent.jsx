@@ -122,15 +122,19 @@ export default function NimTorrent() {
     setAdding(false);
   };
 
+  const fileInputRef = useRef(null);
+
   const handleFileSelect = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.torrent';
-    input.onchange = (e) => {
-      const file = e.target.files[0];
-      if (file) addTorrentFile(file);
-    };
-    input.click();
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      addTorrentFile(file);
+    }
   };
 
   const pauseTorrent = async (hash) => {
