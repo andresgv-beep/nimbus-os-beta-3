@@ -305,7 +305,7 @@ export default function NimTorrent() {
                 <option value="/data/torrents">Default (/data/torrents)</option>
               </select>
             </div>
-            
+
             {/* Magnet link input */}
             <input
               className={styles.modalInput}
@@ -324,21 +324,46 @@ export default function NimTorrent() {
             </div>
 
             {/* Upload .torrent file */}
-            <button className={styles.toolBtn} onClick={handleFileSelect} disabled={adding}
-              style={{ width: '100%', justifyContent: 'center', padding: '10px', marginBottom: 12 }}>
+            <button
+              className={styles.toolBtn}
+              onClick={handleFileSelect}
+              disabled={adding}
+              style={{ width: '100%', justifyContent: 'center', padding: '10px', marginBottom: 12 }}
+            >
               <Icon name="upload" size={14} /> Upload .torrent file
             </button>
 
-            {error && <div style={{ color: 'var(--accent-red)', fontSize: 'var(--text-xs)', marginBottom: 8 }}>{error}</div>}
+            {/* Hidden file input */}
+            <input
+              type="file"
+              accept=".torrent"
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+              onChange={handleFileChange}
+            />
+
+            {error && (
+              <div style={{ color: 'var(--accent-red)', fontSize: 'var(--text-xs)', marginBottom: 8 }}>
+                {error}
+              </div>
+            )}
+
             <div className={styles.modalActions}>
-              <button className={styles.toolBtn} onClick={() => { setShowAdd(false); setError(''); }}>Cancel</button>
-              <button className={styles.toolBtnPrimary} onClick={addTorrent} disabled={adding || !magnetInput.trim()}>
+              <button
+                className={styles.toolBtn}
+                onClick={() => {
+                  setShowAdd(false);
+                  setError('');
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                className={styles.toolBtnPrimary}
+                onClick={addTorrent}
+                disabled={adding || !magnetInput.trim()}
+              >
                 {adding ? 'Adding...' : 'Add Magnet'}
               </button>
             </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
