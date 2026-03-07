@@ -42,8 +42,10 @@ export default function NimTorrent() {
   const [showAdd, setShowAdd] = useState(false);
   const [magnetInput, setMagnetInput] = useState('');
   const [adding, setAdding] = useState(false);
-  const [daemonOk, setDaemonOk] = useState(null); // null = checking, true/false
+  const [daemonOk, setDaemonOk] = useState(null);
   const [error, setError] = useState('');
+  const [shares, setShares] = useState([]);
+  const [savePath, setSavePath] = useState('');
   const timerRef = useRef(null);
 
   const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
@@ -67,6 +69,19 @@ export default function NimTorrent() {
     return () => clearInterval(timerRef.current);
   }, [fetchData]);
 
+  // Fetch shared folders for destination picker
+  useEffect(() => {
+    fetch('/api/shares', { headers: { 'Authorization': `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => {
+        if (Array.isArray(d)) {
+          setShares(d);
+          if (d.length > 0 && !savePath) setSavePath(d[0].path);
+        }
+      })
+      .catch(() => {});
+  }, [token]);
+
   // ─── Actions ───
   const addTorrent = async () => {
     if (!magnetInput.trim()) return;
@@ -75,7 +90,7 @@ export default function NimTorrent() {
     try {
       const res = await fetch('/api/torrent/torrent/add', {
         method: 'POST', headers,
-        body: JSON.stringify({ magnet: magnetInput.trim() }),
+        body: JSON.stringify({ magnet: magnetInput.trim(), save_path: savePath || undefined }),
       });
       const data = await res.json();
       if (data.error) setError(data.error);
@@ -88,12 +103,17 @@ export default function NimTorrent() {
     setAdding(true);
     setError('');
     try {
-      const formData = new FormData();
-      formData.append('torrent', file);
+      // Read file as base64
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
       const res = await fetch('/api/torrent/upload', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: formData,
+        method: 'POST', headers,
+        body: JSON.stringify({ filename: file.name, data: base64, save_path: savePath || undefined }),
       });
       const data = await res.json();
       if (data.error) setError(data.error);
@@ -265,6 +285,22 @@ export default function NimTorrent() {
         <div className={styles.modalOverlay} onClick={() => { setShowAdd(false); setError(''); }}>
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <div className={styles.modalTitle}>Add Torrent</div>
+
+            {/* Destination folder */}
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Download to</label>
+              <select
+                className={styles.modalInput}
+                value={savePath}
+                onChange={e => setSavePath(e.target.value)}
+                style={{ fontFamily: 'var(--font-sans)', marginBottom: 0 }}
+              >
+                {shares.map(s => (
+                  <option key={s.name} value={s.path}>{s.name} ({s.path})</option>
+                ))}
+                <option value="/data/torrents">Default (/data/torrents)</option>
+              </select>
+            </div>
             
             {/* Magnet link input */}
             <input
