@@ -103,8 +103,6 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: rgba(233, 84, 32, 0.1);
-  color: var(--accent);
 }
 
 .torrentInfo { flex: 1; min-width: 0; }

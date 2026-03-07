@@ -3,6 +3,12 @@ import { useAuth } from '@context';
 import Icon from '@icons';
 import styles from './NimTorrent.module.css';
 
+// State icons
+import icoDownloading from './ico-downloading.svg';
+import icoSeeding from './ico-seeding.svg';
+import icoPending from './ico-pending.svg';
+import icoPaused from './ico-paused.svg';
+
 const POLL_MS = 2000;
 
 function formatBytes(bytes) {
@@ -30,6 +36,13 @@ function PauseIco({ size }) { return <Svg size={size}><rect x="6" y="4" width="4
 function StopIco({ size }) { return <Svg size={size}><rect x="4" y="4" width="16" height="16" rx="2"/></Svg>; }
 function TrashFilesIco({ size }) { return <Svg size={size}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></Svg>; }
 function MagnetIco({ size }) { return <Svg size={size}><path d="M6 2v6a6 6 0 0012 0V2"/><rect x="2" y="2" width="6" height="4" rx="1"/><rect x="16" y="2" width="6" height="4" rx="1"/></Svg>; }
+
+function stateIcon(state) {
+  if (state === 'paused') return icoPaused;
+  if (state === 'seeding' || state === 'finished') return icoSeeding;
+  if (state === 'checking' || state === 'metadata') return icoPending;
+  return icoDownloading; // downloading or any other state
+}
 
 function StateBadge({ state }) {
   const cls = {
@@ -230,7 +243,7 @@ export default function NimTorrent() {
                 onClick={() => setSelected(selected === t.hash ? null : t.hash)}
               >
                 <div className={styles.torrentIcon}>
-                  <Icon name={t.state === 'seeding' ? 'upload' : 'download'} size={18} />
+                  <img src={stateIcon(t.state)} alt={t.state} width={28} height={28} draggable={false} />
                 </div>
                 <div className={styles.torrentInfo}>
                   <div className={styles.torrentName}>{t.name}</div>
