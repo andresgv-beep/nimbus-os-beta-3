@@ -141,22 +141,6 @@ export default function NimTorrent() {
     setAdding(false);
   };
 
-  const fileInputRef = useRef(null);
-
-  const handleFileSelect = () => {
-    console.log("UPLOAD CLICK");
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      addTorrentFile(file);
-    }
-  };
-
   const pauseTorrent = async (hash) => {
     await fetch('/api/torrent/torrent/pause', { method: 'POST', headers, body: JSON.stringify({ hash }) });
     fetchData();
@@ -362,9 +346,9 @@ export default function NimTorrent() {
                 accept=".torrent"
                 style={{ display: 'none' }}
                 onChange={(e) => {
-                  console.log("FILE SELECTED", e.target.files);
                   const file = e.target.files[0];
                   if (file) addTorrentFile(file);
+                  e.target.value = '';
                 }}
               />
             </label>
