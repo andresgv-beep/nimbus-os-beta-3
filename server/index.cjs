@@ -262,7 +262,10 @@ const server = http.createServer((req, res) => {
       }
 
       // DEBUG: Send file directly to daemon and capture FULL response
-      const postData = JSON.stringify({ file: filePath, save_path: savePath || '' });
+      const postData = JSON.stringify({
+        file: filePath,
+        save_path: savePath || '/data/torrents'
+      });
       const proxyReq = http.request({
         hostname: '127.0.0.1', port: 9091, path: '/torrent/add', method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) },
