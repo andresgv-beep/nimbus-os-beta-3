@@ -112,13 +112,16 @@ export default function NimTorrent() {
       });
 
       const res = await fetch('/api/torrent/upload', {
-        method: 'POST', headers,
-        body: JSON.stringify({ filename: file.name, data: base64, save_path: savePath || undefined }),
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: file.name, data: base64, save_path: savePath || '' }),
       });
-      const data = await res.json();
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch { data = { error: text || 'Unknown error' }; }
       if (data.error) setError(data.error);
       else { setShowAdd(false); setMagnetInput(''); fetchData(); }
-    } catch { setError('Failed to upload torrent file'); }
+    } catch (err) { setError('Upload failed: ' + (err.message || 'Unknown error')); }
     setAdding(false);
   };
 
