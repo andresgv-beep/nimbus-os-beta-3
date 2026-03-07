@@ -200,8 +200,10 @@ const server = http.createServer((req, res) => {
     const session = getSessionUser(req);
     if (!session) { res.writeHead(401, CORS_HEADERS); return res.end(JSON.stringify({ error: 'Not authenticated' })); }
 
-    const boundary = req.headers['content-type']?.split('boundary=')[1];
-    if (!boundary) { res.writeHead(400, CORS_HEADERS); return res.end(JSON.stringify({ error: 'No boundary' })); }
+    const contentType = req.headers['content-type'] || '';
+    const boundaryMatch = contentType.match(/boundary=(.+)/);
+    if (!boundaryMatch) { res.writeHead(400, CORS_HEADERS); return res.end(JSON.stringify({ error: 'No boundary in content-type' })); }
+    const boundary = boundaryMatch[1].trim();
 
     let rawData = [];
     req.on('data', chunk => rawData.push(chunk));
@@ -210,49 +212,34 @@ const server = http.createServer((req, res) => {
         const buffer = Buffer.concat(rawData);
         let fileName = '', fileData = null, savePath = '';
 
-        // Binary-safe multipart parsing: find boundaries as byte sequences
-        const boundaryBuf = Buffer.from('--' + boundary);
-        const crlfcrlf = Buffer.from('\r\n\r\n');
-        const crlf = Buffer.from('\r\n');
+        // Binary-safe multipart parsing using latin1 round-trip
+        // latin1 is a 1:1 byte↔char mapping, so this preserves binary data
+        const text = buffer.toString('latin1');
+        const delimiter = '--' + boundary;
+        const parts = text.split(delimiter);
 
-        // Find all boundary positions
-        const positions = [];
-        let searchFrom = 0;
-        while (true) {
-          const idx = buffer.indexOf(boundaryBuf, searchFrom);
-          if (idx === -1) break;
-          positions.push(idx);
-          searchFrom = idx + boundaryBuf.length;
-        }
+        // First element is empty (before first boundary), last is closing "--\r\n"
+        for (let i = 1; i < parts.length; i++) {
+          const part = parts[i];
+          // Skip closing boundary
+          if (part.startsWith('--')) continue;
 
-        // Each part is between consecutive boundaries
-        for (let i = 0; i < positions.length - 1; i++) {
-          // Part starts after boundary + \r\n
-          const partStart = positions[i] + boundaryBuf.length;
-          const partEnd = positions[i + 1];
+          const headerEnd = part.indexOf('\r\n\r\n');
+          if (headerEnd === -1) continue;
 
-          // Skip the \r\n right after boundary marker
-          let dataStart = partStart;
-          if (buffer[dataStart] === 0x0D && buffer[dataStart + 1] === 0x0A) dataStart += 2;
-          // Check for closing boundary marker (--)
-          if (buffer[partStart] === 0x2D && buffer[partStart + 1] === 0x2D) continue;
+          const header = part.substring(0, headerEnd);
+          // Body is between header end and the trailing \r\n before next boundary
+          let body = part.substring(headerEnd + 4);
+          // Remove trailing \r\n that precedes the next boundary delimiter
+          if (body.endsWith('\r\n')) body = body.slice(0, -2);
 
-          // Find header/body separator (\r\n\r\n)
-          const headerEndIdx = buffer.indexOf(crlfcrlf, dataStart);
-          if (headerEndIdx === -1 || headerEndIdx >= partEnd) continue;
-
-          const headerStr = buffer.slice(dataStart, headerEndIdx).toString('utf8');
-          const bodyStart = headerEndIdx + 4;
-          // Body ends before the \r\n that precedes the next boundary
-          let bodyEnd = partEnd;
-          if (bodyEnd >= 2 && buffer[bodyEnd - 2] === 0x0D && buffer[bodyEnd - 1] === 0x0A) bodyEnd -= 2;
-
-          if (headerStr.includes('name="save_path"')) {
-            savePath = buffer.slice(bodyStart, bodyEnd).toString('utf8').trim();
-          } else if (headerStr.includes('name="torrent"')) {
-            const fnMatch = headerStr.match(/filename="([^"]+)"/);
+          if (header.includes('name="save_path"')) {
+            savePath = body.trim();
+          } else if (header.includes('name="torrent"')) {
+            const fnMatch = header.match(/filename="([^"]+)"/);
             if (fnMatch) fileName = fnMatch[1];
-            fileData = buffer.slice(bodyStart, bodyEnd);
+            // Convert back to binary buffer preserving all bytes
+            fileData = Buffer.from(body, 'latin1');
           }
         }
 
@@ -290,6 +277,7 @@ const server = http.createServer((req, res) => {
         proxyReq.write(postData);
         proxyReq.end();
       } catch (err) {
+        console.error('[TorrentUpload] Error:', err.message, err.stack);
         res.writeHead(500, CORS_HEADERS);
         res.end(JSON.stringify({ error: 'Upload processing failed: ' + err.message }));
       }
