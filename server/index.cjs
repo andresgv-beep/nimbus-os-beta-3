@@ -196,9 +196,19 @@ const server = http.createServer((req, res) => {
     return routeHandler(req, res, method, url, vms.handleVMs);
 
   // ── Torrent file upload (multipart — handle before proxy) ──
+  {
+    const _dbg = (msg) => { try { fs.appendFileSync('/tmp/nimlog.txt', new Date().toISOString() + ' ' + msg + '\n'); } catch {} };
+    if (url.startsWith('/api/torrent')) _dbg('TORRENT_ROUTE: method=' + method + ' url=[' + url + '] exact=' + (url === '/api/torrent/upload') + ' isPost=' + (method === 'POST'));
+  }
   if (url === '/api/torrent/upload' && method === 'POST') {
+    fs.appendFileSync('/tmp/nimlog.txt', 'UPLOAD_HANDLER_ENTERED\n');
     const session = getSessionUser(req);
-    if (!session) { res.writeHead(401, CORS_HEADERS); return res.end(JSON.stringify({ error: 'Not authenticated' })); }
+    if (!session) {
+      fs.appendFileSync('/tmp/nimlog.txt', 'AUTH_FAILED\n');
+      res.writeHead(401, CORS_HEADERS);
+      return res.end(JSON.stringify({ error: 'Not authenticated' }));
+    }
+    fs.appendFileSync('/tmp/nimlog.txt', 'AUTH_OK\n');
 
     const contentType = req.headers['content-type'] || '';
     const boundaryMatch = contentType.match(/boundary=(?:"([^"]+)"|([^\s;]+))/);
