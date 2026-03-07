@@ -114,7 +114,8 @@ export default function NimTorrent() {
       });
       const text = await res.text();
       let data;
-      try { data = JSON.parse(text); } catch { data = { error: text || 'Unknown response' }; }
+      try { data = JSON.parse(text); } catch { data = { error: text || `Server returned status ${res.status} with no valid response` }; }
+      if (!res.ok && !data.error) data.error = `Upload failed (HTTP ${res.status})`;
       if (data.error) setError(data.error);
       else { setShowAdd(false); setMagnetInput(''); fetchData(); }
     } catch (err) { setError('Upload failed: ' + (err.message || 'Network error')); }
