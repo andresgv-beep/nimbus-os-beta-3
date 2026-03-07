@@ -195,6 +195,77 @@ const server = http.createServer((req, res) => {
   if (url.startsWith('/api/vms'))
     return routeHandler(req, res, method, url, vms.handleVMs);
 
+  // ── Torrent file upload (multipart — handle before proxy) ──
+  if (url === '/api/torrent/upload' && method === 'POST') {
+    const session = getSessionUser(req);
+    if (!session) { res.writeHead(401, CORS_HEADERS); return res.end(JSON.stringify({ error: 'Not authenticated' })); }
+
+    const tmpDir = '/tmp/nimos-torrents';
+    if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
+
+    // Simple multipart parser for single file
+    let chunks = [];
+    req.on('data', c => chunks.push(c));
+    req.on('end', () => {
+      try {
+        const buf = Buffer.concat(chunks);
+        const boundary = req.headers['content-type']?.split('boundary=')[1];
+        if (!boundary) { res.writeHead(400, CORS_HEADERS); return res.end(JSON.stringify({ error: 'No boundary' })); }
+
+        const parts = buf.toString('binary').split('--' + boundary);
+        let fileData = null;
+        let fileName = 'upload.torrent';
+
+        for (const part of parts) {
+          const match = part.match(/filename="([^"]+)"/);
+          if (match) {
+            fileName = match[1];
+            const headerEnd = part.indexOf('\r\n\r\n');
+            if (headerEnd !== -1) {
+              const bodyStart = headerEnd + 4;
+              const bodyEnd = part.lastIndexOf('\r\n');
+              fileData = Buffer.from(part.substring(bodyStart, bodyEnd), 'binary');
+            }
+          }
+        }
+
+        if (!fileData) { res.writeHead(400, CORS_HEADERS); return res.end(JSON.stringify({ error: 'No torrent file found' })); }
+
+        const filePath = path.join(tmpDir, `${Date.now()}-${fileName}`);
+        fs.writeFileSync(filePath, fileData);
+
+        // Send to daemon
+        const postData = JSON.stringify({ file: filePath });
+        const opts = {
+          hostname: '127.0.0.1', port: 9091, path: '/torrent/add', method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) },
+        };
+
+        const proxyReq = http.request(opts, (proxyRes) => {
+          let data = '';
+          proxyRes.on('data', c => data += c);
+          proxyRes.on('end', () => {
+            // Clean up temp file after daemon reads it
+            try { fs.unlinkSync(filePath); } catch {}
+            res.writeHead(200, CORS_HEADERS);
+            res.end(data);
+          });
+        });
+        proxyReq.on('error', () => {
+          try { fs.unlinkSync(filePath); } catch {}
+          res.writeHead(503, CORS_HEADERS);
+          res.end(JSON.stringify({ error: 'Torrent daemon not running' }));
+        });
+        proxyReq.write(postData);
+        proxyReq.end();
+      } catch (err) {
+        res.writeHead(500, CORS_HEADERS);
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
   // ── Torrent Daemon proxy (127.0.0.1:9091) ──
   if (url.startsWith('/api/torrent')) {
     const session = getSessionUser(req);
