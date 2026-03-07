@@ -339,7 +339,7 @@ export default function NimTorrent() {
               type="file"
               accept=".torrent"
               ref={fileInputRef}
-              style={{ display: 'none' }}
+              style={{ visibility: 'hidden', position: 'absolute' }}
               onChange={handleFileChange}
             />
 
