@@ -246,10 +246,11 @@ export default function NimTorrent() {
                   <img src={stateIcon(t.state)} alt={t.state} width={28} height={28} draggable={false} />
                 </div>
                 <div className={styles.torrentInfo}>
-                  <div className={styles.torrentName}>{t.name}</div>
-                  <div className={styles.torrentMeta}>
-                    <span>{formatBytes(t.total_done)} / {formatBytes(t.total_wanted)}</span>
-                    <span>{t.peers} peers · {t.seeds} seeds</span>
+                  <div className={styles.torrentName}>
+                    {t.name}
+                    <span className={styles.torrentMeta}>
+                      {formatBytes(t.total_done)} / {formatBytes(t.total_wanted)} · {t.peers} peers · {t.seeds} seeds
+                    </span>
                   </div>
                 </div>
                 <div className={styles.progressWrap}>
