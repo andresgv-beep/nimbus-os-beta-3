@@ -30,7 +30,7 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(var(--widget-columns, 4), var(--widget-cell, 160px));
+  grid-template-columns: repeat(var(--widget-columns, 6), var(--widget-cell, 160px));
   grid-auto-rows: var(--widget-cell, 160px);
   gap: var(--widget-gap, 12px);
   pointer-events: auto;
@@ -92,17 +92,36 @@
   user-select: none;
 }
 
-/* ─── Edit banner ─── */
-.editBanner {
-  margin-top: 12px;
-  padding: 6px 16px;
-  border-radius: 20px;
-  background: var(--bg-window);
-  border: 1px solid var(--border);
-  color: var(--text-muted);
-  font-size: var(--text-xs);
+/* ─── Edit Done button (floating) ─── */
+.editDoneWrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
   pointer-events: auto;
-  backdrop-filter: blur(20px);
+}
+
+.editDoneBtn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.editDoneBtn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+}
+
+.editDoneBtn:active {
+  transform: scale(0.95);
 }
 
 /* ─── Entry animation ─── */

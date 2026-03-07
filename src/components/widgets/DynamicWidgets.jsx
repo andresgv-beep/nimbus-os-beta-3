@@ -171,11 +171,12 @@ export default function DynamicWidgets() {
     <>
       <WidgetGrid
         widgets={widgets}
-        columns={isClassic ? 1 : 4}
+        columns={isClassic ? 1 : 6}
         mode={widgetMode}
         renderWidget={renderWidget}
         editMode={editMode}
         onReorder={handleReorder}
+        onExitEdit={() => setEditMode(false)}
       />
       {showAddModal && (
         <AddWidgetModal

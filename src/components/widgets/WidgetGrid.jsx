@@ -60,7 +60,7 @@ function computeLayout(widgets, columns) {
 // WidgetGrid
 // ═══════════════════════════════════
 
-export default function WidgetGrid({ widgets, columns = 4, mode = 'dynamic', renderWidget, editMode, onReorder }) {
+export default function WidgetGrid({ widgets, columns = 6, mode = 'dynamic', renderWidget, editMode, onReorder, onExitEdit }) {
   const effectiveColumns = mode === 'classic' ? 1 : columns;
   const [dragOver, setDragOver] = useState(null);
   const dragItem = useRef(null);
@@ -145,8 +145,12 @@ export default function WidgetGrid({ widgets, columns = 4, mode = 'dynamic', ren
       </div>
 
       {editMode && (
-        <div className={styles.editBanner}>
-          Editing widgets — drag to reorder
+        <div className={styles.editDoneWrap}>
+          <button className={styles.editDoneBtn} onClick={onExitEdit} title="Done editing">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </button>
         </div>
       )}
     </div>
