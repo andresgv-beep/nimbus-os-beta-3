@@ -12,6 +12,7 @@
 #include <string>
 #include <mutex>
 #include <memory>
+#include <optional>
 
 namespace lt = libtorrent;
 
@@ -63,7 +64,7 @@ private:
     std::string default_save_path_;
     std::mutex mutex_;
 
-    lt::torrent_handle* findHandle(const std::string& hash);
+    std::optional<lt::torrent_handle> findHandle(const std::string& hash);
     std::string hashToHex(const lt::torrent_handle& h);
     std::string stateToString(lt::torrent_status::state_t s, bool paused);
 };

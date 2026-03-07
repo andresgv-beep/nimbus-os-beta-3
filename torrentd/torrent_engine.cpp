@@ -108,7 +108,7 @@ std::string TorrentEngine::addTorrentFile(const std::string& torrent_path, const
 
 bool TorrentEngine::pause(const std::string& hash) {
     std::lock_guard<std::mutex> lock(mutex_);
-    auto* h = findHandle(hash);
+    auto h = findHandle(hash);
     if (!h) return false;
     h->pause();
     return true;
@@ -116,7 +116,7 @@ bool TorrentEngine::pause(const std::string& hash) {
 
 bool TorrentEngine::resume(const std::string& hash) {
     std::lock_guard<std::mutex> lock(mutex_);
-    auto* h = findHandle(hash);
+    auto h = findHandle(hash);
     if (!h) return false;
     h->resume();
     return true;
@@ -124,7 +124,7 @@ bool TorrentEngine::resume(const std::string& hash) {
 
 bool TorrentEngine::remove(const std::string& hash, bool delete_files) {
     std::lock_guard<std::mutex> lock(mutex_);
-    auto* h = findHandle(hash);
+    auto h = findHandle(hash);
     if (!h) return false;
 
     if (delete_files) {
@@ -263,16 +263,13 @@ void TorrentEngine::loadState() {
 // Private helpers
 // ═══════════════════════════════════
 
-lt::torrent_handle* TorrentEngine::findHandle(const std::string& hash) {
+std::optional<lt::torrent_handle> TorrentEngine::findHandle(const std::string& hash) {
     for (auto& h : session_->get_torrents()) {
         if (hashToHex(h) == hash) {
-            // Return pointer to handle in session's internal storage
-            static lt::torrent_handle found;
-            found = h;
-            return &found;
+            return h;
         }
     }
-    return nullptr;
+    return std::nullopt;
 }
 
 std::string TorrentEngine::hashToHex(const lt::torrent_handle& h) {
