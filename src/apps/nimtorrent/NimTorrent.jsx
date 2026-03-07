@@ -325,23 +325,29 @@ export default function NimTorrent() {
             </div>
 
             {/* Upload .torrent file */}
-            <button
+            <label
               className={styles.toolBtn}
-              onClick={handleFileSelect}
-              disabled={adding}
-              style={{ width: '100%', justifyContent: 'center', padding: '10px', marginBottom: 12 }}
+              style={{
+                width: '100%',
+                justifyContent: 'center',
+                padding: '10px',
+                marginBottom: 12,
+                display: 'flex',
+                cursor: 'pointer'
+              }}
             >
               <Icon name="upload" size={14} /> Upload .torrent file
-            </button>
 
-            {/* Hidden file input */}
-            <input
-              type="file"
-              accept=".torrent"
-              ref={fileInputRef}
-              style={{ visibility: 'hidden', position: 'absolute' }}
-              onChange={handleFileChange}
-            />
+              <input
+                type="file"
+                accept=".torrent"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) addTorrentFile(file);
+                }}
+              />
+            </label>
 
             {error && (
               <div style={{ color: 'var(--accent-red)', fontSize: 'var(--text-xs)', marginBottom: 8 }}>
