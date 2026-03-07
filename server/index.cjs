@@ -197,103 +197,92 @@ const server = http.createServer((req, res) => {
 
   // ── Torrent file upload (multipart — handle before proxy) ──
   if (url === '/api/torrent/upload' && method === 'POST') {
-    const jsonRes = (code, obj) => {
-      if (res.headersSent) return;
-      res.writeHead(code, CORS_HEADERS);
-      res.end(JSON.stringify(obj));
-    };
+    const session = getSessionUser(req);
+    if (!session) { res.writeHead(401, CORS_HEADERS); return res.end(JSON.stringify({ error: 'Not authenticated' })); }
 
-    try {
-      const session = getSessionUser(req);
-      if (!session) return jsonRes(401, { error: 'Not authenticated' });
+    const contentType = req.headers['content-type'] || '';
+    const boundaryMatch = contentType.match(/boundary=(?:"([^"]+)"|([^\s;]+))/);
+    const boundary = boundaryMatch ? (boundaryMatch[1] || boundaryMatch[2]) : null;
+    if (!boundary) { res.writeHead(400, CORS_HEADERS); return res.end(JSON.stringify({ error: 'No boundary' })); }
 
-      const contentType = req.headers['content-type'] || '';
-      const boundaryMatch = contentType.match(/boundary=(?:"([^"]+)"|([^\s;]+))/);
-      const boundary = boundaryMatch ? (boundaryMatch[1] || boundaryMatch[2]) : null;
-      if (!boundary) return jsonRes(400, { error: 'No boundary in content-type' });
+    const chunks = [];
+    req.on('data', chunk => chunks.push(chunk));
+    req.on('end', () => {
+      const buffer = Buffer.concat(chunks);
+      let fileName = '', fileData = null, savePath = '';
 
-      let rawData = [];
-      req.on('data', chunk => rawData.push(chunk));
-      req.on('error', (err) => jsonRes(500, { error: 'Stream error: ' + err.message }));
-      req.on('end', () => {
-        try {
-          const buffer = Buffer.concat(rawData);
-          if (buffer.length === 0) return jsonRes(400, { error: 'Empty request body' });
+      try {
+        const text = buffer.toString('latin1');
+        const parts = text.split('--' + boundary);
+        for (let i = 1; i < parts.length; i++) {
+          const part = parts[i];
+          if (part.startsWith('--')) continue;
+          const sep = part.indexOf('\r\n\r\n');
+          if (sep === -1) continue;
+          const hdr = part.substring(0, sep);
+          let body = part.substring(sep + 4);
+          if (body.endsWith('\r\n')) body = body.slice(0, -2);
 
-          let fileName = '', fileData = null, savePath = '';
-
-          // Pure binary multipart parsing
-          const boundaryBuf = Buffer.from('--' + boundary);
-          const rnrn = Buffer.from('\r\n\r\n');
-
-          let pos = 0;
-          while (pos < buffer.length) {
-            const bStart = buffer.indexOf(boundaryBuf, pos);
-            if (bStart === -1) break;
-
-            const afterBoundary = bStart + boundaryBuf.length;
-            const nextB = buffer.indexOf(boundaryBuf, afterBoundary + 2);
-            if (nextB === -1) break;
-
-            const partStart = afterBoundary + 2;
-            const partEnd = nextB - 2;
-            const partBuf = buffer.slice(partStart, partEnd);
-
-            const headerEnd = partBuf.indexOf(rnrn);
-            if (headerEnd === -1) { pos = nextB; continue; }
-
-            const headerStr = partBuf.slice(0, headerEnd).toString('utf8');
-            const bodyBuf = partBuf.slice(headerEnd + 4);
-
-            if (headerStr.includes('name="save_path"')) {
-              savePath = bodyBuf.toString('utf8').trim();
-            } else if (headerStr.includes('name="torrent"')) {
-              const fnMatch = headerStr.match(/filename="([^"]+)"/);
-              if (fnMatch) fileName = fnMatch[1];
-              fileData = bodyBuf;
-            }
-
-            pos = nextB;
+          if (hdr.includes('name="save_path"')) {
+            savePath = body.trim();
+          } else if (hdr.includes('name="torrent"')) {
+            const m = hdr.match(/filename="([^"]+)"/);
+            if (m) fileName = m[1];
+            fileData = Buffer.from(body, 'latin1');
           }
-
-          if (!fileData || !fileName) {
-            return jsonRes(400, { error: 'No torrent file found in upload' });
-          }
-
-          const tmpDir = '/tmp/nimos-torrents';
-          if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
-          const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
-          const filePath = path.join(tmpDir, `${Date.now()}-${safeName}`);
-          fs.writeFileSync(filePath, fileData);
-
-          const postData = JSON.stringify({ file: filePath, save_path: savePath || '' });
-          const opts = {
-            hostname: '127.0.0.1', port: 9091, path: '/torrent/add', method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) },
-          };
-
-          const proxyReq = http.request(opts, (proxyRes) => {
-            let rdata = '';
-            proxyRes.on('data', c => rdata += c);
-            proxyRes.on('end', () => {
-              try { fs.unlinkSync(filePath); } catch {}
-              res.writeHead(proxyRes.statusCode || 200, CORS_HEADERS);
-              res.end(rdata || JSON.stringify({ ok: true }));
-            });
-          });
-          proxyReq.on('error', (err) => {
-            try { fs.unlinkSync(filePath); } catch {}
-            jsonRes(503, { error: 'Torrent daemon not running: ' + err.message });
-          });
-          proxyReq.write(postData);
-          proxyReq.end();
-        } catch (err) {
-          jsonRes(500, { error: 'Parse error: ' + err.message });
         }
+      } catch (e) {
+        res.writeHead(500, CORS_HEADERS);
+        return res.end(JSON.stringify({ error: 'Multipart parse: ' + e.message }));
+      }
+
+      if (!fileData || !fileName) {
+        res.writeHead(400, CORS_HEADERS);
+        return res.end(JSON.stringify({ error: 'No torrent file found' }));
+      }
+
+      // Save to tmp — keep file for debug
+      const tmpDir = '/tmp/nimos-torrents';
+      try { if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true }); } catch {}
+      const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const filePath = path.join(tmpDir, `${Date.now()}-${safeName}`);
+      try { fs.writeFileSync(filePath, fileData); } catch (e) {
+        res.writeHead(500, CORS_HEADERS);
+        return res.end(JSON.stringify({ error: 'Write failed: ' + e.message }));
+      }
+
+      // DEBUG: Send file directly to daemon and capture FULL response
+      const postData = JSON.stringify({ file: filePath, save_path: savePath || '' });
+      const proxyReq = http.request({
+        hostname: '127.0.0.1', port: 9091, path: '/torrent/add', method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) },
+      }, (proxyRes) => {
+        let rdata = '';
+        proxyRes.on('data', c => rdata += c);
+        proxyRes.on('end', () => {
+          // DON'T delete file for debug
+          // Log everything
+          const debugInfo = {
+            daemon_status: proxyRes.statusCode,
+            daemon_body: rdata,
+            file_size: fileData.length,
+            file_path: filePath,
+            original_name: fileName,
+            save_path: savePath,
+          };
+          console.log('[TorrentUpload] DEBUG:', JSON.stringify(debugInfo));
+          // Force 200 regardless
+          res.writeHead(200, CORS_HEADERS);
+          res.end(rdata || JSON.stringify({ ok: true }));
+        });
       });
-    } catch (err) {
-      jsonRes(500, { error: 'Handler error: ' + err.message });
-    }
+      proxyReq.on('error', (err) => {
+        res.writeHead(503, CORS_HEADERS);
+        res.end(JSON.stringify({ error: 'Daemon not running: ' + err.message }));
+      });
+      proxyReq.write(postData);
+      proxyReq.end();
+    });
     return;
   }
 
