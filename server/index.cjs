@@ -200,7 +200,7 @@ const server = http.createServer((req, res) => {
     const _dbg = (msg) => { try { fs.appendFileSync('/tmp/nimlog.txt', new Date().toISOString() + ' ' + msg + '\n'); } catch {} };
     if (url.startsWith('/api/torrent')) _dbg('TORRENT_ROUTE: method=' + method + ' url=[' + url + '] exact=' + (url === '/api/torrent/upload') + ' isPost=' + (method === 'POST'));
   }
-  if (url === '/api/torrent/upload' && method === 'POST') {
+  if (url.startsWith('/api/torrent/upload') && method === 'POST') {
     fs.appendFileSync('/tmp/nimlog.txt', 'UPLOAD_HANDLER_ENTERED\n');
     const session = getSessionUser(req);
     if (!session) {
