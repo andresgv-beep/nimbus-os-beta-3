@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import WidgetCard from './WidgetCard';
 
-export default function ClockWidget({ size = '1x1' }) {
+export default function ClockWidget({ size = '1x1', ...menuProps }) {
   const [now, setNow] = useState(new Date());
   const [colonVisible, setColonVisible] = useState(true);
 
@@ -26,7 +26,7 @@ export default function ClockWidget({ size = '1x1' }) {
   );
 
   return (
-    <WidgetCard title="Clock" icon={icon} size={size}>
+    <WidgetCard title="Clock" icon={icon} size={size} {...menuProps}>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: 6 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', lineHeight: 1 }}>
           <span style={{ fontSize: 54, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-2px', fontVariantNumeric: 'tabular-nums' }}>

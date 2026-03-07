@@ -40,7 +40,7 @@ function CircularProgress({ percent, size = 70, strokeWidth = 5, color, caption 
   );
 }
 
-export default function DiskPoolWidget({ size = '1x1', onClick }) {
+export default function DiskPoolWidget({ size = '1x1', onClick, ...menuProps }) {
   const { token } = useAuth();
   const [pools, setPools] = useState(null);
 
@@ -72,7 +72,7 @@ export default function DiskPoolWidget({ size = '1x1', onClick }) {
   const usedColor = percent > 90 ? '#EF5350' : percent > 75 ? '#FFA726' : '#4CAF50';
 
   return (
-    <WidgetCard title="Disk Pool" icon={icon} size={size} onClick={onClick} loading={!pools}>
+    <WidgetCard title="Disk Pool" icon={icon} size={size} onClick={onClick} loading={!pools} {...menuProps}>
       {pool ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: 6 }}>
           <CircularProgress

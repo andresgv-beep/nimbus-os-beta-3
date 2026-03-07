@@ -12,7 +12,7 @@ function formatUptime(seconds) {
   return `${m}m`;
 }
 
-export default function UptimeWidget({ size = '1x1' }) {
+export default function UptimeWidget({ size = '1x1', ...menuProps }) {
   const { token } = useAuth();
   const [uptime, setUptime] = useState(null);
 
@@ -38,7 +38,7 @@ export default function UptimeWidget({ size = '1x1' }) {
   );
 
   return (
-    <WidgetCard title="Uptime" icon={icon} size={size} loading={uptime === null}>
+    <WidgetCard title="Uptime" icon={icon} size={size} loading={uptime === null} {...menuProps}>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
         <div style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', color: 'var(--accent-green)', lineHeight: 1 }}>
           {formatUptime(uptime)}

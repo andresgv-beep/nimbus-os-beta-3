@@ -93,7 +93,7 @@ const headerIcon = (
   </svg>
 );
 
-export default function NimTorrentWidget({ size = '2x2', onClick }) {
+export default function NimTorrentWidget({ size = '2x2', onClick, ...menuProps }) {
   const { token } = useAuth();
   const [torrents, setTorrents] = useState(null);
   const [stats, setStats] = useState(null);
@@ -128,7 +128,7 @@ export default function NimTorrentWidget({ size = '2x2', onClick }) {
   const maxItems = is1x1 ? 1 : is2x1 ? 2 : 4;
 
   return (
-    <WidgetCard title="NimTorrent" icon={headerIcon} size={size} onClick={onClick} loading={torrents === null}>
+    <WidgetCard title="NimTorrent" icon={headerIcon} size={size} onClick={onClick} loading={torrents === null} {...menuProps}>
       {sorted.length === 0 ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
           No active torrents

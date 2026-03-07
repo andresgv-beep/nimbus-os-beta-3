@@ -23,7 +23,7 @@ function ProgressBar({ label, percent, color }) {
   );
 }
 
-export default function SystemMonitorWidget({ size = '2x1', onClick }) {
+export default function SystemMonitorWidget({ size = '2x1', onClick, ...menuProps }) {
   const { token } = useAuth();
   const [data, setData] = useState(null);
 
@@ -55,7 +55,7 @@ export default function SystemMonitorWidget({ size = '2x1', onClick }) {
   const memColor = mem > 80 ? '#EF5350' : mem > 60 ? '#FFA726' : '#42A5F5';
 
   return (
-    <WidgetCard title="System Monitor" icon={icon} size={size} onClick={onClick} loading={!data}>
+    <WidgetCard title="System Monitor" icon={icon} size={size} onClick={onClick} loading={!data} {...menuProps}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, justifyContent: 'center' }}>
         <ProgressBar label="CPU" percent={cpu} color={cpuColor} />
         <ProgressBar label="RAM" percent={mem} color={memColor} />

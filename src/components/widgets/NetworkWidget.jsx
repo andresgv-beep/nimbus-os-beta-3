@@ -94,7 +94,7 @@ function ArrowDown({ color, size = 14 }) {
   );
 }
 
-export default function NetworkWidget({ size = '1x1', onClick }) {
+export default function NetworkWidget({ size = '1x1', onClick, ...menuProps }) {
   const { token } = useAuth();
   const [data, setData] = useState(null);
   const [history, setHistory] = useState({ rx: [], tx: [] });
@@ -142,7 +142,7 @@ export default function NetworkWidget({ size = '1x1', onClick }) {
   // ─── 1×1 Compact ───
   if (size === '1x1') {
     return (
-      <WidgetCard title="Network" icon={icon} size={size} onClick={onClick} loading={!data}>
+      <WidgetCard title="Network" icon={icon} size={size} onClick={onClick} loading={!data} {...menuProps}>
         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', flex: 1, gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <ArrowUp color={uploadColor} />
@@ -163,7 +163,7 @@ export default function NetworkWidget({ size = '1x1', onClick }) {
 
   // ─── 2×1 Wave Graph ───
   return (
-    <WidgetCard title="Network" icon={icon} size={size} onClick={onClick} loading={!data}>
+    <WidgetCard title="Network" icon={icon} size={size} onClick={onClick} loading={!data} {...menuProps}>
       <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 4 }}>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>

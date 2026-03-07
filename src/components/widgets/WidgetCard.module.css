@@ -90,6 +90,11 @@
 }
 
 .headerMenu {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.menuDots {
   width: 26px;
   height: 26px;
   display: flex;
@@ -98,17 +103,92 @@
   color: var(--text-muted);
   border-radius: var(--radius);
   opacity: 0;
-  flex-shrink: 0;
+  cursor: pointer;
 }
 
-[data-perf-level="full"] .headerMenu { transition: opacity 0.2s, background 0.15s; }
+[data-perf-level="full"] .menuDots { transition: opacity 0.2s, background 0.15s; }
 
-.card:hover .headerMenu { opacity: 0.7; }
-.card:hover .headerMenu:hover { opacity: 1; }
+.card:hover .menuDots { opacity: 0.7; }
+.card:hover .menuDots:hover { opacity: 1; }
 
-.headerMenu:hover {
+.menuDots:hover {
   color: var(--text-primary);
   background: rgba(255, 255, 255, 0.08);
+}
+
+/* ─── Dropdown ─── */
+.dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  min-width: 160px;
+  background: var(--bg-window, rgba(30, 30, 35, 0.95));
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-light, rgba(255, 255, 255, 0.1));
+  border-radius: 10px;
+  padding: 4px;
+  z-index: 100;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.dropItem {
+  padding: 7px 12px;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  white-space: nowrap;
+}
+
+.dropItem:hover {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.06));
+}
+
+.dropItemActive {
+  color: var(--accent);
+}
+
+.dropItemDanger {
+  color: var(--accent-red, #EF5350);
+}
+.dropItemDanger:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.dropArrow {
+  font-size: 16px;
+  opacity: 0.5;
+  margin-left: 8px;
+}
+
+.dropCheck {
+  color: var(--accent);
+  font-size: 14px;
+  margin-left: 8px;
+}
+
+.dropSub {
+  padding: 2px 0 2px 8px;
+}
+
+.dropSep {
+  height: 1px;
+  background: var(--border, rgba(255, 255, 255, 0.08));
+  margin: 4px 8px;
+}
+
+[data-theme="light"] .dropdown {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .dropItem:hover {
+  background: rgba(0, 0, 0, 0.04);
 }
 
 /* ─── Body ─── */
