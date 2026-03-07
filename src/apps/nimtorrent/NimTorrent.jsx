@@ -367,3 +367,9 @@ export default function NimTorrent() {
                 {adding ? 'Adding...' : 'Add Magnet'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
