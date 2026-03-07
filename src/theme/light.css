@@ -1,43 +1,146 @@
 /* ═══════════════════════════════════
    NimOS Light Theme
-   Warm cream — inspired by macOS
+   Warm cream — macOS inspired
+   Improved contrast + glass hierarchy
    ═══════════════════════════════════ */
 
 [data-theme='light'] {
+
+  /* ───── Desktop ───── */
+
   --bg-desktop: #e8e4df;
+
+  /* ───── Window surfaces ───── */
+
   --bg-window: rgba(248, 244, 240, 0.92);
-  --bg-sidebar: rgba(215, 208, 200, 0.45);
-  --bg-card: rgba(0, 0, 0, 0.04);
+
+  /* Sidebar slightly darker than window for contrast */
+  --bg-sidebar: rgba(220, 212, 203, 0.78);
+
+  /* Glass surfaces */
+  --bg-glass: rgba(248, 244, 240, 0.72);
+
+  /* Cards / UI blocks */
+  --bg-card: rgba(255, 255, 255, 0.55);
+
+  /* Inputs */
   --bg-input: rgba(0, 0, 0, 0.05);
+
+  /* Hover / active */
   --bg-hover: rgba(0, 0, 0, 0.06);
   --bg-active: rgba(0, 0, 0, 0.10);
+
+  /* Tooltips / dropdowns */
   --bg-tooltip: #ece8e3;
   --bg-dropdown: rgba(248, 244, 240, 0.95);
   --bg-dropdown-hover: rgba(0, 0, 0, 0.05);
-  --bg-overlay: rgba(0, 0, 0, 0.25);
-  --bg-glass: rgba(248, 244, 240, 0.78);
-  --bg-taskbar: rgba(235, 230, 224, 0.72);
-  --bg-topbar: rgba(240, 236, 230, 0.78);
 
-  --text-primary: #1d1b19;
-  --text-secondary: #5c564f;
+  /* Overlay */
+  --bg-overlay: rgba(0, 0, 0, 0.25);
+
+  /* Navigation bars */
+  --bg-taskbar: rgba(235, 230, 224, 0.78);
+  --bg-topbar: rgba(240, 236, 230, 0.82);
+
+  /* ───── Text colors ───── */
+
+  --text-primary: #1c1b1a;
+  --text-secondary: #2e2b27;
   --text-muted: #8c8479;
   --text-inverse: #f5f2ef;
+
+  /* ───── Borders ───── */
 
   --border: rgba(0, 0, 0, 0.12);
   --border-light: rgba(0, 0, 0, 0.08);
   --border-focus: var(--nimbus-orange);
+
+  /* ───── Accent (Nimbus orange) ───── */
 
   --accent: var(--nimbus-orange);
   --accent-hover: var(--nimbus-orange-hover);
   --accent-active: var(--nimbus-orange-active);
   --accent-glow: rgba(233, 84, 32, 0.15);
 
+  /* ───── Scrollbars ───── */
+
   --scrollbar-track: transparent;
-  --scrollbar-thumb: rgba(0, 0, 0, 0.10);
+  --scrollbar-thumb: rgba(0, 0, 0, 0.12);
   --scrollbar-thumb-hover: rgba(0, 0, 0, 0.18);
 
-  /* ─── Dynamic Widgets ─── */
+  /* ───── Dynamic Widgets ───── */
+
   --bg-widget: rgba(255, 255, 255, 0.78);
-  --widget-border: rgba(0, 0, 0, 0.10);
+  --widget-border: rgba(0, 0, 0, 0.08);
+}
+
+
+/* ═══════════════════════════════════
+   macOS style UI improvements
+   (optional but recommended)
+   ═══════════════════════════════════ */
+
+
+/* Glass blur effect */
+
+.glass,
+.sidebar,
+.widget,
+.dropdown,
+.topbar,
+.taskbar {
+  backdrop-filter: blur(20px) saturate(140%);
+}
+
+
+/* Sidebar separation (macOS trick) */
+
+.sidebar {
+  box-shadow: inset -1px 0 rgba(0,0,0,0.08);
+}
+
+
+/* Window elevation */
+
+.window {
+  box-shadow:
+    0 20px 40px rgba(0,0,0,0.08),
+    0 4px 12px rgba(0,0,0,0.06);
+}
+
+
+/* Widget styling */
+
+.widget {
+  border: 1px solid var(--widget-border);
+}
+
+
+/* Sidebar item hover */
+
+.sidebar-item:hover {
+  background: var(--bg-hover);
+}
+
+
+/* Active sidebar item */
+
+.sidebar-item.active {
+  background: rgba(233,84,32,0.12);
+}
+
+
+/* Scrollbar styling */
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
 }
