@@ -5,6 +5,7 @@ import SystemMonitorWidget from './SystemMonitorWidget';
 import DiskPoolWidget from './DiskPoolWidget';
 import NetworkWidget from './NetworkWidget';
 import UptimeWidget from './UptimeWidget';
+import NimTorrentWidget from './NimTorrentWidget';
 
 // ═══════════════════════════════════
 // Widget Registry
@@ -17,6 +18,7 @@ const WIDGET_REGISTRY = {
   'disk-pool':      { component: DiskPoolWidget,      label: 'Disk Pool',      sizes: ['1x1', '2x1'] },
   'network':        { component: NetworkWidget,       label: 'Network',        sizes: ['1x1', '2x1'] },
   'uptime':         { component: UptimeWidget,        label: 'Uptime',         sizes: ['1x1'] },
+  'nimtorrent':     { component: NimTorrentWidget,    label: 'NimTorrent',     sizes: ['1x1', '2x1', '2x2'] },
 };
 
 // ═══════════════════════════════════
@@ -28,6 +30,7 @@ const DEFAULT_WIDGETS = [
   { id: 'disk-pool',      size: '1x1' },
   { id: 'system-monitor', size: '2x1' },
   { id: 'network',        size: '2x1' },
+  { id: 'nimtorrent',     size: '2x1' },
 ];
 
 // ═══════════════════════════════════
@@ -59,6 +62,7 @@ export default function DynamicWidgets() {
       'system-monitor': 'monitor',
       'disk-pool':      'nimsettings',
       'network':        'nimsettings',
+      'nimtorrent':     'nimtorrent',
     };
 
     const handleClick = appMap[widget.id]
