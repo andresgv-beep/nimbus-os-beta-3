@@ -208,28 +208,57 @@ const server = http.createServer((req, res) => {
     req.on('end', () => {
       try {
         const buffer = Buffer.concat(rawData);
-        const text = buffer.toString('latin1');
-        const parts = text.split('--' + boundary).slice(1, -1);
-
         let fileName = '', fileData = null, savePath = '';
 
-        for (const part of parts) {
-          const headerEnd = part.indexOf('\r\n\r\n');
-          const header = part.substring(0, headerEnd);
-          const body = part.substring(headerEnd + 4, part.length - 2);
+        // Binary-safe multipart parsing: find boundaries as byte sequences
+        const boundaryBuf = Buffer.from('--' + boundary);
+        const crlfcrlf = Buffer.from('\r\n\r\n');
+        const crlf = Buffer.from('\r\n');
 
-          if (header.includes('name="save_path"')) {
-            savePath = body.trim();
-          } else if (header.includes('name="torrent"')) {
-            const fnMatch = header.match(/filename="([^"]+)"/);
+        // Find all boundary positions
+        const positions = [];
+        let searchFrom = 0;
+        while (true) {
+          const idx = buffer.indexOf(boundaryBuf, searchFrom);
+          if (idx === -1) break;
+          positions.push(idx);
+          searchFrom = idx + boundaryBuf.length;
+        }
+
+        // Each part is between consecutive boundaries
+        for (let i = 0; i < positions.length - 1; i++) {
+          // Part starts after boundary + \r\n
+          const partStart = positions[i] + boundaryBuf.length;
+          const partEnd = positions[i + 1];
+
+          // Skip the \r\n right after boundary marker
+          let dataStart = partStart;
+          if (buffer[dataStart] === 0x0D && buffer[dataStart + 1] === 0x0A) dataStart += 2;
+          // Check for closing boundary marker (--)
+          if (buffer[partStart] === 0x2D && buffer[partStart + 1] === 0x2D) continue;
+
+          // Find header/body separator (\r\n\r\n)
+          const headerEndIdx = buffer.indexOf(crlfcrlf, dataStart);
+          if (headerEndIdx === -1 || headerEndIdx >= partEnd) continue;
+
+          const headerStr = buffer.slice(dataStart, headerEndIdx).toString('utf8');
+          const bodyStart = headerEndIdx + 4;
+          // Body ends before the \r\n that precedes the next boundary
+          let bodyEnd = partEnd;
+          if (bodyEnd >= 2 && buffer[bodyEnd - 2] === 0x0D && buffer[bodyEnd - 1] === 0x0A) bodyEnd -= 2;
+
+          if (headerStr.includes('name="save_path"')) {
+            savePath = buffer.slice(bodyStart, bodyEnd).toString('utf8').trim();
+          } else if (headerStr.includes('name="torrent"')) {
+            const fnMatch = headerStr.match(/filename="([^"]+)"/);
             if (fnMatch) fileName = fnMatch[1];
-            fileData = Buffer.from(body, 'latin1');
+            fileData = buffer.slice(bodyStart, bodyEnd);
           }
         }
 
         if (!fileData || !fileName) {
           res.writeHead(400, CORS_HEADERS);
-          return res.end(JSON.stringify({ error: 'No torrent file found' }));
+          return res.end(JSON.stringify({ error: 'No torrent file found in upload' }));
         }
 
         const tmpDir = '/tmp/nimos-torrents';
@@ -249,11 +278,11 @@ const server = http.createServer((req, res) => {
           proxyRes.on('data', c => rdata += c);
           proxyRes.on('end', () => {
             try { fs.unlinkSync(filePath); } catch {}
-            res.writeHead(200, CORS_HEADERS);
+            res.writeHead(proxyRes.statusCode || 200, CORS_HEADERS);
             res.end(rdata);
           });
         });
-        proxyReq.on('error', () => {
+        proxyReq.on('error', (err) => {
           try { fs.unlinkSync(filePath); } catch {}
           res.writeHead(503, CORS_HEADERS);
           res.end(JSON.stringify({ error: 'Torrent daemon not running' }));
@@ -262,7 +291,7 @@ const server = http.createServer((req, res) => {
         proxyReq.end();
       } catch (err) {
         res.writeHead(500, CORS_HEADERS);
-        res.end(JSON.stringify({ error: err.message }));
+        res.end(JSON.stringify({ error: 'Upload processing failed: ' + err.message }));
       }
     });
     return;
