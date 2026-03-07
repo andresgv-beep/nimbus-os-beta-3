@@ -200,67 +200,33 @@ const server = http.createServer((req, res) => {
     const session = getSessionUser(req);
     if (!session) { res.writeHead(401, CORS_HEADERS); return res.end(JSON.stringify({ error: 'Not authenticated' })); }
 
-    const tmpDir = '/tmp/nimos-torrents';
-    if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
-
-    let chunks = [];
-    req.on('data', c => chunks.push(c));
+    let body = '';
+    req.on('data', c => body += c);
     req.on('end', () => {
       try {
-        const buf = Buffer.concat(chunks);
-        const contentType = req.headers['content-type'] || '';
-        const boundaryMatch = contentType.match(/boundary=(.+)/);
-        if (!boundaryMatch) { res.writeHead(400, CORS_HEADERS); return res.end(JSON.stringify({ error: 'No boundary' })); }
+        const { filename, data, save_path } = JSON.parse(body);
+        if (!data) { res.writeHead(400, CORS_HEADERS); return res.end(JSON.stringify({ error: 'No torrent data' })); }
 
-        const boundary = Buffer.from('--' + boundaryMatch[1]);
-        let fileName = 'upload.torrent';
-        let fileData = null;
+        const tmpDir = '/tmp/nimos-torrents';
+        if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
 
-        // Find file data in multipart buffer
-        let pos = 0;
-        while (pos < buf.length) {
-          const bStart = buf.indexOf(boundary, pos);
-          if (bStart === -1) break;
-
-          const nextB = buf.indexOf(boundary, bStart + boundary.length + 2);
-          if (nextB === -1) break;
-
-          const partBuf = buf.slice(bStart + boundary.length + 2, nextB - 2);
-          const headerEnd = partBuf.indexOf('\r\n\r\n');
-          if (headerEnd === -1) { pos = nextB; continue; }
-
-          const headerStr = partBuf.slice(0, headerEnd).toString('utf8');
-          const fnMatch = headerStr.match(/filename="([^"]+)"/);
-
-          if (fnMatch) {
-            fileName = fnMatch[1];
-            fileData = partBuf.slice(headerEnd + 4);
-            break;
-          }
-          pos = nextB;
-        }
-
-        if (!fileData || fileData.length === 0) {
-          res.writeHead(400, CORS_HEADERS);
-          return res.end(JSON.stringify({ error: 'No torrent file found in upload' }));
-        }
-
-        const filePath = path.join(tmpDir, `${Date.now()}-${fileName}`);
-        fs.writeFileSync(filePath, fileData);
+        const filePath = path.join(tmpDir, `${Date.now()}-${filename || 'upload.torrent'}`);
+        fs.writeFileSync(filePath, Buffer.from(data, 'base64'));
 
         // Send to daemon
-        const postData = JSON.stringify({ file: filePath });
+        const postData = JSON.stringify({ file: filePath, save_path: save_path || '' });
         const opts = {
           hostname: '127.0.0.1', port: 9091, path: '/torrent/add', method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) },
         };
 
         const proxyReq = http.request(opts, (proxyRes) => {
-          let data = '';
-          proxyRes.on('data', c => data += c);
+          let rdata = '';
+          proxyRes.on('data', c => rdata += c);
           proxyRes.on('end', () => {
+            try { fs.unlinkSync(filePath); } catch {}
             res.writeHead(200, CORS_HEADERS);
-            res.end(data);
+            res.end(rdata);
           });
         });
         proxyReq.on('error', () => {
