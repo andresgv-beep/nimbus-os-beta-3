@@ -197,7 +197,6 @@ const server = http.createServer((req, res) => {
 
   // ── Torrent file upload (multipart — handle before proxy) ──
   if (method === 'POST' && (url === '/api/torrent/upload' || url.startsWith('/api/torrent/upload'))) {
-    try { fs.writeFileSync('/tmp/TORRENT_UPLOAD_HIT', 'url=' + url + ' method=' + method); } catch(e){}
     const session = getSessionUser(req);
     if (!session) { res.writeHead(401, CORS_HEADERS); return res.end(JSON.stringify({ error: 'Not authenticated' })); }
 
@@ -239,8 +238,8 @@ const server = http.createServer((req, res) => {
           return res.end(JSON.stringify({ error: 'No .torrent file found in upload' }));
         }
 
-        // Write to tmp
-        const tmpDir = '/tmp/nimos-torrents';
+        // Write to shared temp dir (not /tmp — PrivateTmp isolates it from daemon)
+        const tmpDir = '/var/cache/nimos-torrents';
         if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
         const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
         const filePath = path.join(tmpDir, `${Date.now()}-${safeName}`);
