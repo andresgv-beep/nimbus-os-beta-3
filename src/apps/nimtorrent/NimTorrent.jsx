@@ -343,6 +343,7 @@ export default function NimTorrent() {
                 accept=".torrent"
                 style={{ display: 'none' }}
                 onChange={(e) => {
+                  console.log("FILE SELECTED", e.target.files);
                   const file = e.target.files[0];
                   if (file) addTorrentFile(file);
                 }}
