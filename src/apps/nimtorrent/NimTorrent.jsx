@@ -109,7 +109,9 @@ export default function NimTorrent() {
 
       const res = await fetch('/api/torrent/upload', {
         method: 'POST',
-        headers,
+        headers: {
+          Authorization: headers.Authorization
+        },
         body: formData,
       });
       
